@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scanner — Snake Eye</title>
+  <meta name="description" content="Filter NYSE and NASDAQ by price, volume, fundamentals and technical indicators, ranked by Snake Score." />
+  <link rel="icon" href="../assets/images/icons/favicon-64.png" type="image/png" sizes="64x64" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/scanner.css" />
+  <link rel="stylesheet" href="../css/responsive.css" />
+  <script type="module" src="../js/scanner.js"></script>
+</head>
+<body data-page="scanner">
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" href="../index.html">
+        <img class="brand__logo" src="../assets/images/logo/snake-eye-mark.png" alt="" width="28" height="28" />
+        <span class="brand__name">SNAKE <em>👁</em> EYE</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../index.html" data-nav="home">Home</a>
+        <a href="scanner.html" data-nav="scanner">Scanner</a>
+        <a href="watchlist.html" data-nav="watchlist">
+          Watchlist<span class="nav-badge" data-watchlist-badge hidden>0</span>
+        </a>
+        <a href="settings.html" data-nav="settings">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap scanner-layout">
+    <aside class="scanner-sidebar">
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">Saved strategies</h2>
+        </div>
+        <div class="preset-list" id="preset-list"></div>
+      </div>
+
+      <form class="panel scan-form" id="scan-form">
+        <div class="panel__head">
+          <h2 class="panel__title">Filters</h2>
+          <span class="panel__meta" id="filter-count"></span>
+        </div>
+
+        <details class="filter-group" open>
+          <summary>Market</summary>
+          <div class="check-grid">
+            <label class="check"><input type="checkbox" name="exchanges" value="NYSE" checked /> NYSE</label>
+            <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" checked /> NASDAQ</label>
+          </div>
+        </details>
+
+        <details class="filter-group" open>
+          <summary>Price</summary>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" placeholder="any" /></label>
+          </div>
+          <div class="range-buttons" id="price-ranges">
+            <button type="button" class="range-btn" data-price-range=",5">&lt; $5</button>
+            <button type="button" class="range-btn" data-price-range="5,10">$5–10</button>
+            <button type="button" class="range-btn" data-price-range="10,20">$10–20</button>
+            <button type="button" class="range-btn" data-price-range="20,50">$20–50</button>
+            <button type="button" class="range-btn" data-price-range="50,100">$50–100</button>
+            <button type="button" class="range-btn" data-price-range="100,">&gt; $100</button>
+          </div>
+        </details>
+
+        <details class="filter-group" open>
+          <summary>Volume</summary>
+          <label class="field"><span class="field__label">Volume today &gt;</span><input type="number" name="volumeMin" min="0" step="50000" placeholder="any" /></label>
+          <label class="field"><span class="field__label">Average volume (20d) &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" placeholder="any" /></label>
+          <label class="field"><span class="field__label">Relative volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" placeholder="any" /></label>
+        </details>
+
+        <details class="filter-group">
+          <summary>Fundamentals</summary>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Market cap min $</span><input type="number" name="marketCapMin" min="0" step="1000000" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Market cap max $</span><input type="number" name="marketCapMax" min="0" step="1000000" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Revenue min $</span><input type="number" name="revenueMin" min="0" step="1000000" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Revenue growth &gt; %</span><input type="number" name="revenueGrowthMin" step="1" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">EPS &gt;</span><input type="number" name="epsMin" step="0.1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">EPS growth &gt; %</span><input type="number" name="epsGrowthMin" step="1" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">P/E &lt;</span><input type="number" name="peMax" min="0" step="1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">P/S &lt;</span><input type="number" name="psMax" min="0" step="0.5" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">ROE &gt; %</span><input type="number" name="roeMin" step="1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Debt/equity &lt;</span><input type="number" name="debtEquityMax" min="0" step="0.1" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Gross margin &gt; %</span><input type="number" name="grossMarginMin" step="1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Oper. margin &gt; %</span><input type="number" name="operatingMarginMin" step="1" placeholder="any" /></label>
+          </div>
+          <label class="field"><span class="field__label">Current ratio &gt;</span><input type="number" name="currentRatioMin" min="0" step="0.1" placeholder="any" /></label>
+        </details>
+
+        <details class="filter-group" open>
+          <summary>Technical</summary>
+
+          <div class="field-row">
+            <label class="field"><span class="field__label">RSI min</span><input type="number" name="rsiMin" min="0" max="100" step="1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">RSI max</span><input type="number" name="rsiMax" min="0" max="100" step="1" placeholder="any" /></label>
+          </div>
+
+          <div class="check-grid check-grid--stack">
+            <label class="check"><input type="checkbox" name="macdBullish" /> MACD above signal</label>
+            <label class="check"><input type="checkbox" name="macdCross" /> MACD crossed up</label>
+            <label class="check"><input type="checkbox" name="aoPositive" /> Awesome Oscillator &gt; 0</label>
+            <label class="check"><input type="checkbox" name="aoRising" /> Awesome Oscillator rising</label>
+          </div>
+
+          <p class="field__label filter-group__sublabel">Moving averages</p>
+          <div class="check-grid check-grid--stack">
+            <label class="check"><input type="checkbox" name="priceAboveSma20" /> Price &gt; SMA20</label>
+            <label class="check"><input type="checkbox" name="priceAboveSma50" /> Price &gt; SMA50</label>
+            <label class="check"><input type="checkbox" name="priceAboveSma200" /> Price &gt; SMA200</label>
+            <label class="check"><input type="checkbox" name="smaStacked" /> SMA20 &gt; SMA50 &gt; SMA200</label>
+            <label class="check"><input type="checkbox" name="priceAboveEma20" /> Price &gt; EMA20</label>
+            <label class="check"><input type="checkbox" name="priceAboveEma50" /> Price &gt; EMA50</label>
+            <label class="check"><input type="checkbox" name="priceAboveEma200" /> Price &gt; EMA200</label>
+          </div>
+
+          <p class="field__label filter-group__sublabel">Trend, volatility &amp; range</p>
+          <label class="field"><span class="field__label">ADX &gt;</span><input type="number" name="adxMin" min="0" max="100" step="1" placeholder="any" /></label>
+          <div class="field-row">
+            <label class="field"><span class="field__label">ATR % min</span><input type="number" name="atrPercentMin" min="0" step="0.1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">ATR % max</span><input type="number" name="atrPercentMax" min="0" step="0.1" placeholder="any" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Stoch %K min</span><input type="number" name="stochasticMin" min="0" max="100" step="1" placeholder="any" /></label>
+            <label class="field"><span class="field__label">Stoch %K max</span><input type="number" name="stochasticMax" min="0" max="100" step="1" placeholder="any" /></label>
+          </div>
+          <label class="field"><span class="field__label">Within % of 52-week high</span><input type="number" name="near52wHigh" min="0" max="100" step="1" placeholder="any" /></label>
+          <div class="check-grid check-grid--stack">
+            <label class="check"><input type="checkbox" name="bbBreakout" /> Close above upper Bollinger Band</label>
+          </div>
+        </details>
+
+        <div class="scan-form__actions">
+          <button class="btn btn--primary btn--block" type="submit">🐍 SCAN MARKET</button>
+          <button class="btn btn--ghost btn--block" type="reset">Reset filters</button>
+        </div>
+      </form>
+    </aside>
+
+    <section class="scanner-results" id="results-panel">
+      <div class="results-head" id="results">
+        <div>
+          <h1 class="results-title">Scan results</h1>
+          <p class="results-meta">
+            <strong id="results-count">0 of 0</strong> matched
+            <span class="results-meta__sep">·</span>
+            <span id="data-stamp">loading…</span>
+            <span id="results-shown" class="results-meta__shown"></span>
+          </p>
+        </div>
+        <label class="results-search">
+          <span class="visually-hidden">Search ticker or company</span>
+          <input type="search" id="results-search" placeholder="Search ticker…" autocomplete="off" />
+        </label>
+      </div>
+
+      <div class="chip-row" id="active-filters"></div>
+
+      <div class="table-wrap panel">
+        <table class="results-table">
+          <caption class="visually-hidden">Stocks matching the current filters, sortable by column</caption>
+          <thead id="results-head"></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+
+      <p class="disclaimer">
+        <strong>Demo data.</strong> Tickers and prices in this build are generated, not real
+        market data. The Snake Score ranks how closely a stock fits the selected criteria —
+        it is not a forecast and not investment advice.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer__inner">
+      <div>
+        <p><strong>🐍 Snake Eye</strong> — see the market, find the target.</p>
+      </div>
+      <div>
+        <p>© <span data-current-year>2026</span> Snake Eye</p>
+        <p><a href="../docs/INDICATORS.md">Indicator reference</a></p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

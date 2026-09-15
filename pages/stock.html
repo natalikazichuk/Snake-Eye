@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock — Snake Eye</title>
+  <meta name="description" content="Price chart, indicators, fundamentals and the Snake Score breakdown for a single symbol." />
+  <link rel="icon" href="../assets/images/icons/favicon-64.png" type="image/png" sizes="64x64" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/stock.css" />
+  <link rel="stylesheet" href="../css/responsive.css" />
+  <script type="module" src="../js/stock.js"></script>
+</head>
+<body data-page="stock">
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" href="../index.html">
+        <img class="brand__logo" src="../assets/images/logo/snake-eye-mark.png" alt="" width="28" height="28" />
+        <span class="brand__name">SNAKE <em>👁</em> EYE</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../index.html" data-nav="home">Home</a>
+        <a href="scanner.html" data-nav="scanner">Scanner</a>
+        <a href="watchlist.html" data-nav="watchlist">
+          Watchlist<span class="nav-badge" data-watchlist-badge hidden>0</span>
+        </a>
+        <a href="settings.html" data-nav="settings">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap stock-page is-loading" id="stock-page">
+    <section class="stock-hero">
+      <div class="stock-hero__identity">
+        <div class="stock-hero__line">
+          <h1 class="stock-hero__ticker" id="stock-ticker">—</h1>
+          <span class="tag" id="stock-exchange"></span>
+          <span class="tag" id="stock-sector"></span>
+        </div>
+        <p class="stock-hero__name" id="stock-name"></p>
+      </div>
+
+      <div class="stock-hero__quote">
+        <span class="stock-hero__price" id="stock-price">—</span>
+        <span class="stock-hero__change" id="stock-change"></span>
+      </div>
+
+      <div class="stock-hero__actions">
+        <button class="btn btn--primary" type="button" id="watch-toggle" aria-pressed="false">👁 Add to watchlist</button>
+        <a class="btn btn--ghost" href="scanner.html">← Back to scanner</a>
+      </div>
+    </section>
+
+    <section class="panel score-panel" aria-labelledby="score-heading">
+      <div class="score-panel__main">
+        <h2 class="panel__title" id="score-heading">🐍 Snake Score</h2>
+        <p class="score-panel__value"><span id="score-value">—</span><small>/ 100</small></p>
+        <p class="score-panel__label" id="score-label"></p>
+        <div class="score-bar">
+          <span class="score-bar__fill" id="score-bar-fill" style="width:0%"></span>
+        </div>
+        <p class="score-panel__note">
+          Weighted from four sub-scores: technical 40%, momentum 25%, volume 20%,
+          fundamental 15%. It measures fit to the setup, not future price.
+        </p>
+      </div>
+      <div class="score-components" id="score-components"></div>
+    </section>
+
+    <section class="panel chart-stack" aria-labelledby="charts-heading">
+      <div class="panel__head">
+        <h2 class="panel__title" id="charts-heading">Price &amp; indicators</h2>
+        <div class="range-buttons" id="range-controls">
+          <button type="button" class="range-btn" data-bars="60">3M</button>
+          <button type="button" class="range-btn" data-bars="120">6M</button>
+          <button type="button" class="range-btn is-active" data-bars="180">9M</button>
+          <button type="button" class="range-btn" data-bars="all">All</button>
+        </div>
+      </div>
+
+      <div class="chart-readout" id="chart-readout"></div>
+
+      <figure class="chart">
+        <figcaption class="chart__title">
+          Price
+          <span class="chart__legend">
+            <i class="dot dot--price"></i>Close
+            <i class="dot dot--sma20"></i>SMA20
+            <i class="dot dot--sma50"></i>SMA50
+            <i class="dot dot--sma200"></i>SMA200
+          </span>
+        </figcaption>
+        <canvas id="chart-price" role="img" aria-label="Closing price with 20, 50 and 200 day moving averages"></canvas>
+      </figure>
+
+      <figure class="chart">
+        <figcaption class="chart__title">Volume</figcaption>
+        <canvas id="chart-volume" role="img" aria-label="Daily volume"></canvas>
+      </figure>
+
+      <figure class="chart">
+        <figcaption class="chart__title">RSI (14)</figcaption>
+        <canvas id="chart-rsi" role="img" aria-label="Relative Strength Index with 30 and 70 levels"></canvas>
+      </figure>
+
+      <figure class="chart">
+        <figcaption class="chart__title">MACD (12, 26, 9)</figcaption>
+        <canvas id="chart-macd" role="img" aria-label="MACD line, signal line and histogram"></canvas>
+      </figure>
+
+      <figure class="chart">
+        <figcaption class="chart__title">Awesome Oscillator</figcaption>
+        <canvas id="chart-ao" role="img" aria-label="Awesome Oscillator histogram"></canvas>
+      </figure>
+    </section>
+
+    <section class="stock-grid">
+      <div class="panel">
+        <div class="panel__head"><h2 class="panel__title">Indicators</h2></div>
+        <div class="metric-grid" id="indicator-cards"></div>
+        <div class="stat-list" id="indicator-details"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head"><h2 class="panel__title">Moving averages</h2></div>
+        <div class="stat-list" id="moving-averages"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head"><h2 class="panel__title">Volume &amp; range</h2></div>
+        <div class="stat-list" id="volume-stats"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head"><h2 class="panel__title">Fundamentals</h2></div>
+        <div class="stat-list" id="fundamentals"></div>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      <strong>Demo data.</strong> This symbol is fictional and its prices are generated.
+      Snake Eye is an analysis tool: the Snake Score reflects how well the stock fits the
+      scanner's criteria and is not a price forecast or investment advice.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer__inner">
+      <div><p><strong>🐍 Snake Eye</strong> — see the market, find the target.</p></div>
+      <div>
+        <p>© <span data-current-year>2026</span> Snake Eye</p>
+        <p><a href="../docs/INDICATORS.md">Indicator reference</a></p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

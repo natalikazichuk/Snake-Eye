@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings — Snake Eye</title>
+  <meta name="description" content="Data source, storage and roadmap for this build of Snake Eye." />
+  <link rel="icon" href="../assets/images/icons/favicon-64.png" type="image/png" sizes="64x64" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/stock.css" />
+  <link rel="stylesheet" href="../css/responsive.css" />
+  <script type="module" src="../js/settings.js"></script>
+</head>
+<body data-page="settings">
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" href="../index.html">
+        <img class="brand__logo" src="../assets/images/logo/snake-eye-mark.png" alt="" width="28" height="28" />
+        <span class="brand__name">SNAKE <em>👁</em> EYE</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../index.html" data-nav="home">Home</a>
+        <a href="scanner.html" data-nav="scanner">Scanner</a>
+        <a href="watchlist.html" data-nav="watchlist">
+          Watchlist<span class="nav-badge" data-watchlist-badge hidden>0</span>
+        </a>
+        <a href="settings.html" data-nav="settings">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap watchlist-page">
+    <div class="section__head">
+      <div>
+        <h1>Settings</h1>
+        <p class="section__lead">
+          What this build runs on, what it stores, and what is still ahead on the roadmap.
+        </p>
+      </div>
+    </div>
+
+    <div class="stock-grid">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">Data source</h2></div>
+        <div class="stat-list" id="data-source"></div>
+        <p class="score-panel__note">
+          Snake Eye reads a bundled JSON universe. A market data provider needs an API key,
+          and a key cannot live in frontend code — Stage 4 adds a small backend that holds
+          the key and serves the same shape this file has.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">Storage</h2></div>
+        <div class="stat-list" id="storage-stats"></div>
+        <div class="scan-form__actions">
+          <button class="btn btn--ghost" type="button" id="clear-watchlist">Clear saved watchlist</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">Snake Score weights</h2></div>
+        <div class="stat-list" id="score-weights"></div>
+        <p class="score-panel__note">
+          Weights are defined in <code>js/score.js</code>. Adjusting them there changes every
+          ranking in the app.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">Roadmap</h2></div>
+        <div class="stat-list" id="roadmap"></div>
+      </section>
+    </div>
+
+    <p class="disclaimer">
+      <strong>Demo data.</strong> Everything in this build is generated for development.
+      For real use, the delay of the market feed, data quality, exchange licensing,
+      trading fees and risk all have to be accounted for.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer__inner">
+      <div><p><strong>🐍 Snake Eye</strong> — see the market, find the target.</p></div>
+      <div><p>© <span data-current-year>2026</span> Snake Eye</p></div>
+    </div>
+  </footer>
+</body>
+</html>
