@@ -1,0 +1,91 @@
+{
+  "presets": [
+    {
+      "id": "snake-hunt",
+      "name": "Snake Hunt",
+      "emoji": "🐍",
+      "tagline": "The house strategy: cheap, liquid, trending up with momentum confirmed.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "priceMin": 2,
+        "priceMax": 30,
+        "avgVolumeMin": 500000,
+        "relVolumeMin": 1.5,
+        "rsiMin": 40,
+        "rsiMax": 70,
+        "macdBullish": true,
+        "aoPositive": true,
+        "priceAboveSma50": true
+      }
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum",
+      "emoji": "🚀",
+      "tagline": "Stocks already moving, with volume and both oscillators behind them.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "priceMin": 2,
+        "priceMax": 50,
+        "avgVolumeMin": 500000,
+        "relVolumeMin": 1.5,
+        "rsiMin": 50,
+        "rsiMax": 70,
+        "macdBullish": true,
+        "aoPositive": true,
+        "priceAboveSma50": true
+      }
+    },
+    {
+      "id": "bullish-trend",
+      "name": "Bullish Trend",
+      "emoji": "📈",
+      "tagline": "Clean trend structure: price over SMA20, moving averages stacked in order.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "priceAboveSma20": true,
+        "smaStacked": true,
+        "macdBullish": true,
+        "aoPositive": true
+      }
+    },
+    {
+      "id": "breakout",
+      "name": "Breakout",
+      "emoji": "🔥",
+      "tagline": "Heavy volume near the 52-week high, with momentum turning up.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "relVolumeMin": 2,
+        "near52wHigh": 92,
+        "macdBullish": true,
+        "aoRising": true
+      }
+    },
+    {
+      "id": "value",
+      "name": "Value",
+      "emoji": "💎",
+      "tagline": "Profitable, growing and not expensive, with a balance sheet that holds up.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "peMax": 20,
+        "psMax": 3,
+        "debtEquityMax": 1,
+        "roeMin": 10,
+        "revenueGrowthMin": 5
+      }
+    },
+    {
+      "id": "high-volume",
+      "name": "High Volume",
+      "emoji": "⚡",
+      "tagline": "Today's tape is busy: twice the usual volume on a liquid name.",
+      "criteria": {
+        "exchanges": ["NYSE", "NASDAQ"],
+        "relVolumeMin": 2,
+        "avgVolumeMin": 500000
+      }
+    }
+  ]
+}

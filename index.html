@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake Eye — Stock Market Scanner</title>
+  <meta name="description" content="Snake Eye scans NYSE and NASDAQ by price, volume, fundamentals and technical indicators, then ranks what it finds with the Snake Score." />
+  <link rel="icon" href="assets/images/icons/favicon-64.png" type="image/png" sizes="64x64" />
+  <link rel="apple-touch-icon" href="assets/images/logo/snake-eye-mark.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script type="module" src="js/app.js"></script>
+</head>
+<body data-page="home">
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" href="index.html">
+        <img class="brand__logo" src="assets/images/logo/snake-eye-mark.png" alt="" width="28" height="28" />
+        <span class="brand__name">SNAKE <em>👁</em> EYE</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="index.html" data-nav="home">Home</a>
+        <a href="pages/scanner.html" data-nav="scanner">Scanner</a>
+        <a href="pages/watchlist.html" data-nav="watchlist">
+          Watchlist<span class="nav-badge" data-watchlist-badge hidden>0</span>
+        </a>
+        <a href="pages/settings.html" data-nav="settings">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero__copy">
+        <img
+          class="hero__logo"
+          src="assets/images/logo/snake-eye-logo.jpg"
+          alt="Snake Eye — market scanner"
+          width="640"
+          height="640"
+        />
+        <p class="hero__eyebrow">Market Scanner</p>
+        <h1 class="hero__title">SNAKE <span>👁</span> EYE</h1>
+        <p class="hero__slogan">See the market. Find the target.</p>
+        <p class="hero__lead">
+          Set your conditions once — exchange, price, volume, fundamentals, RSI, MACD,
+          Awesome Oscillator — and Snake Eye leaves only the stocks that match, ranked by
+          a single 0–100 Snake Score.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--lg" href="pages/scanner.html">🐍 Open the scanner</a>
+          <a class="btn btn--ghost btn--lg" href="#how">How it works</a>
+        </div>
+      </div>
+
+      <aside class="hero__panel panel" aria-labelledby="top-setups-title">
+        <div class="panel__head">
+          <h2 class="panel__title" id="top-setups-title">Today's strongest setups</h2>
+          <span class="panel__meta" id="home-data-stamp">loading…</span>
+        </div>
+        <div class="highlights" id="home-highlights">
+          <p class="highlights__loading">Scanning the universe…</p>
+        </div>
+        <div class="highlights__legend">
+          <span>Ticker</span><span>Price</span><span>Change</span><span>Score</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" aria-labelledby="quick-scan-title">
+      <div class="section__head">
+        <div>
+          <h2 id="quick-scan-title">Quick scan</h2>
+          <p class="section__lead">
+            The essentials from the full scanner. Set them here and Snake Eye opens the
+            results with these filters already applied.
+          </p>
+        </div>
+      </div>
+
+      <form class="quick-scan panel" id="quick-scan">
+        <fieldset class="quick-scan__group">
+          <legend class="field__label">Exchange</legend>
+          <div class="check-grid">
+            <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" checked /> NASDAQ</label>
+            <label class="check"><input type="checkbox" name="exchanges" value="NYSE" checked /> NYSE</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quick-scan__group">
+          <legend class="field__label">Price</legend>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" value="2" /></label>
+            <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" value="30" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quick-scan__group">
+          <legend class="field__label">Volume</legend>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Avg volume &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" value="500000" /></label>
+            <label class="field"><span class="field__label">Rel. volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" value="1.5" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quick-scan__group">
+          <legend class="field__label">RSI</legend>
+          <div class="field-row">
+            <label class="field"><span class="field__label">Min</span><input type="number" name="rsiMin" min="0" max="100" value="40" /></label>
+            <label class="field"><span class="field__label">Max</span><input type="number" name="rsiMax" min="0" max="100" value="70" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quick-scan__group quick-scan__group--wide">
+          <legend class="field__label">Momentum</legend>
+          <div class="check-grid">
+            <label class="check"><input type="checkbox" name="macdBullish" checked /> MACD bullish</label>
+            <label class="check"><input type="checkbox" name="aoPositive" checked /> Awesome Oscillator positive</label>
+            <label class="check"><input type="checkbox" name="priceAboveSma50" /> Price &gt; SMA50</label>
+          </div>
+        </fieldset>
+
+        <div class="quick-scan__submit">
+          <button class="btn btn--primary btn--lg btn--block" type="submit">🐍 SCAN MARKET</button>
+        </div>
+      </form>
+
+      <div class="preset-row">
+        <span class="preset-row__label">Or start from a strategy:</span>
+        <div class="preset-row__chips" id="home-presets"></div>
+      </div>
+    </section>
+
+    <section class="market-banner" aria-label="NYSE and NASDAQ">
+      <img
+        class="market-banner__art"
+        src="assets/images/market-bull-bear.jpg"
+        alt="Bull and bear facing each other in front of the NYSE and NASDAQ buildings"
+        width="1100"
+        height="1100"
+        loading="lazy"
+      />
+      <div class="market-banner__copy">
+        <h2>Both sides of the tape</h2>
+        <p>
+          Snake Eye reads NYSE and NASDAQ the same way whichever direction the market is
+          running: the filters describe the setup you want, and the Snake Score says how
+          well each symbol fits it.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="how" aria-labelledby="how-title">
+      <h2 id="how-title">How the hunt works</h2>
+      <div class="feature-grid">
+        <article class="feature panel">
+          <span class="feature__icon">🎯</span>
+          <h3>Filter the whole tape</h3>
+          <p>
+            Exchange, price and volume, twelve fundamental metrics and thirteen technical
+            indicators — every filter is optional, and they stack.
+          </p>
+        </article>
+        <article class="feature panel">
+          <span class="feature__icon">🐍</span>
+          <h3>Rank with the Snake Score</h3>
+          <p>
+            Technical, momentum, volume and fundamental sub-scores combine into one 0–100
+            number, so the strongest matches sort to the top by themselves.
+          </p>
+        </article>
+        <article class="feature panel">
+          <span class="feature__icon">👁</span>
+          <h3>Keep an eye on the target</h3>
+          <p>
+            Open any symbol for charts and the full indicator set, then save it to your
+            watchlist — stored in your browser, no account needed.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      <strong>Demo data.</strong> This build runs on a generated universe of fictional
+      tickers so the scanner can be developed before a market data provider is connected.
+      The Snake Score measures how well a stock fits the selected criteria — it is not a
+      price forecast and not investment advice.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer__inner">
+      <div>
+        <p><strong>🐍 Snake Eye</strong> — see the market, find the target.</p>
+        <p>Prices and fundamentals in this build are synthetic demo data.</p>
+      </div>
+      <div>
+        <p>© <span data-current-year>2026</span> Snake Eye</p>
+        <p><a href="docs/PROJECT.md">Project docs</a> · <a href="docs/INDICATORS.md">Indicators</a> · <a href="docs/API.md">Data &amp; API</a></p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
