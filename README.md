@@ -1,6 +1,10 @@
-# 🐍👁️ Snake Eye — Stock Market Scanner
+<p align="center">
+  <img src="assets/images/logo/snake-eye-logo.jpg" alt="Snake Eye" width="280" />
+</p>
 
-> **See the market. Find the target.**
+<h1 align="center">🐍👁️ Snake Eye — Stock Market Scanner</h1>
+
+<p align="center"><strong>See the market. Find the target.</strong></p>
 
 Snake Eye filters a NYSE/NASDAQ-style universe by price, volume, fundamentals and
 technical indicators, then ranks whatever survives the filters with a single 0–100
@@ -8,6 +12,25 @@ technical indicators, then ranks whatever survives the filters with a single 0�
 
 It is a static frontend — plain HTML, CSS and ES modules, no build step and no
 dependencies — so it runs anywhere a folder can be served, GitHub Pages included.
+
+---
+
+## Screenshots
+
+### Landing page — quick scan and today's strongest setups
+
+![Snake Eye landing page](docs/screenshots/home.jpg)
+
+### Scanner — filters on the left, ranked results on the right
+
+Running the **Snake Hunt** preset: price $2–30, average volume over 500K, relative
+volume over 1.5, RSI 40–70, MACD bullish, AO positive, price above SMA50.
+
+![Snake Eye scanner](docs/screenshots/scanner.jpg)
+
+### Stock page — Snake Score breakdown and the chart stack
+
+![Snake Eye stock page](docs/screenshots/stock.jpg)
 
 ---
 
