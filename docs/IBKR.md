@@ -82,6 +82,28 @@ Mobile (or your security device). When it succeeds the page says
 ### 2.5 Verify from the command line
 
 ```bash
+npm run gateway
+```
+
+```text
+✓ Gateway ready at https://localhost:5000
+  authenticated: true   connected: true   competing: false
+
+  Next:  npm run ingest -- --limit 10
+```
+
+It tells the four failure modes apart — nothing listening, something on the port
+that is not the gateway, running but not logged in, and a competing session —
+and prints the fix for each. It also exits non-zero when the gateway is not
+ready, so a scheduled run can be guarded:
+
+```bash
+npm run gateway && npm run ingest
+```
+
+The raw endpoint is still there if you prefer it:
+
+```bash
 curl -sk https://localhost:5000/v1/api/iserver/auth/status
 # {"authenticated":true,"connected":true,"competing":false, ...}
 ```
@@ -226,6 +248,8 @@ If you ever want the demo data back: delete the local file, or regenerate it wit
 | `only N bars` | IBKR returned a short history for a recent listing. `--period 2y` helps; under 200 sessions there is no SMA200 and the trend filters have no data for that symbol. |
 | Prices look wrong across a split | Bars must be split-adjusted. The Client Portal returns adjusted history by default; if you switch to the TWS API, use `whatToShow=ADJUSTED_LAST`. |
 | `competing` session warning | TWS or another gateway holds the connection. |
+| `Server listen failed Address already in use: bind` | A gateway is already running. Do not start a second one — `npm run gateway` will confirm the first is alive. To start clean: `taskkill /IM java.exe /F` (Windows), then launch exactly one. |
+| Login page repeats `Action failed` | Stale cookies from the previous attempt. Log in from a private browser window, and check the Live / Paper toggle matches the account. |
 | `404` for `data/stocks.local.json` in the browser console | Normal before your first ingest: the app probes for the local file and falls back to the demo universe. |
 
 ---

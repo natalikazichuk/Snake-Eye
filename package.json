@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "serve": "npx --yes http-server -p 8080 -c-1 .",
+    "gateway": "node scripts/gateway-status.mjs",
     "ingest": "node scripts/ibkr-ingest.mjs",
     "demo-data": "node scripts/generate-stocks.mjs"
   },
