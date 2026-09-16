@@ -59,10 +59,16 @@ export function pickContract(rows, symbol) {
 function exchangeOf(row) {
   // CP Web API puts the exchange in `description`; the MCP shape uses `exchange`.
   const direct = row.exchange || row.listingExchange || row.description;
-  if (direct && !String(direct).includes(' ')) return String(direct).toUpperCase();
+  if (direct && !String(direct).includes(' ')) return cleanExchange(direct);
   const header = String(row.companyHeader || '');
   const dash = header.lastIndexOf(' - ');
-  return dash === -1 ? null : header.slice(dash + 3).trim().toUpperCase();
+  return dash === -1 ? null : cleanExchange(header.slice(dash + 3));
+}
+
+/** NASDAQ.NMS -> NASDAQ: venue suffixes only fragment the exchange filter. */
+function cleanExchange(value) {
+  const cleaned = String(value).trim().toUpperCase().split('.')[0];
+  return cleaned || null;
 }
 
 function nameOf(row) {

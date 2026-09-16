@@ -62,7 +62,7 @@ function buildRow(stock, meta) {
   const row = {
     ticker: stock.ticker,
     name: stock.name,
-    exchange: stock.exchange,
+    exchange: (stock.exchange || 'UNKNOWN').toUpperCase(),
     sector: stock.sector,
     currency: stock.currency || 'USD',
     fundamentals: stock.fundamentals || {},
@@ -104,6 +104,10 @@ async function fetchUniverse() {
   // provider actually supplied fundamentals; IBKR often does not.
   meta.hasFundamentals = rows.some((row) => row.fundamentals && row.fundamentals.marketCap !== null && row.fundamentals.marketCap !== undefined);
   meta.provider = meta.provider || (meta.synthetic === false ? 'live' : 'demo');
+
+  // The scanner builds its exchange checkboxes from this, so a provider that
+  // reports ARCA or BATS is filterable instead of invisible.
+  meta.exchanges = [...new Set(rows.map((row) => row.exchange))].sort();
 
   return { meta, rows };
 }

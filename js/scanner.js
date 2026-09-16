@@ -66,9 +66,11 @@ export function applyCriteriaToForm(form, criteria) {
     const value = criteria[field.key];
 
     if (field.type === 'set') {
-      const selected = value || [];
+      // No restriction in the criteria means every option is in play, so every
+      // box is ticked. Leaving them all empty showed "nothing selected" while
+      // the scan happily returned everything — the form contradicting itself.
       inputs.forEach((input) => {
-        input.checked = selected.includes(input.value);
+        input.checked = value ? value.includes(input.value) : true;
       });
     } else if (field.type === 'flag') {
       inputs.forEach((input) => {
@@ -80,6 +82,34 @@ export function applyCriteriaToForm(form, criteria) {
       });
     }
   }
+}
+
+/**
+ * The exchange checkboxes come from the loaded universe, not a fixed list.
+ *
+ * The markup ships with NYSE and NASDAQ because that is what the demo data
+ * holds, but a real feed also returns ARCA, BATS, AMEX and venue-suffixed
+ * names. Hard-coding two of them made everything else unselectable — and
+ * unfilterable — so whatever is actually present is rendered here, all ticked.
+ */
+function renderExchangeOptions(exchanges) {
+  const container = qs('#exchange-options');
+  if (!container || !exchanges?.length) return;
+
+  const current = new Set(
+    qsa('[name="exchanges"]', container).filter((input) => input.checked).map((input) => input.value),
+  );
+  const hadAny = current.size > 0;
+
+  container.replaceChildren(
+    ...exchanges.map((exchange) => {
+      const label = el('label', { className: 'check' });
+      const input = el('input', { type: 'checkbox', name: 'exchanges', value: exchange });
+      input.checked = hadAny ? current.has(exchange) : true;
+      label.append(input, document.createTextNode(` ${exchange}`));
+      return label;
+    }),
+  );
 }
 
 /* ---------------------------------------------------------------- columns */
@@ -350,6 +380,7 @@ async function initScannerPage() {
     state.universe = rows;
 
     renderSourceInfo(meta, rows.length);
+    renderExchangeOptions(meta.exchanges);
 
     // Fundamental filters silently match nothing when the provider sent no
     // fundamentals, so say it out loud instead of letting scans come back empty.
