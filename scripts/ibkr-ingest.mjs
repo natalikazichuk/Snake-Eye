@@ -275,6 +275,33 @@ async function fetchHistory(gateway, conid, { period, bar }) {
 }
 
 /**
+ * The search reply does not always carry the listing exchange — some gateway
+ * builds return the company name where others return the venue. `/trsrv/stocks`
+ * answers with the contracts behind a symbol, each with its exchange, so an
+ * unresolved venue can be filled in rather than left as UNKNOWN (which then
+ * shows up as an unusable checkbox in the scanner).
+ */
+async function lookupExchange(gateway, symbol) {
+  try {
+    const payload = await request(
+      `${gateway}/v1/api/trsrv/stocks?symbols=${encodeURIComponent(symbol)}`,
+      { timeout: 15000 },
+    );
+    const entries = payload?.[symbol.toUpperCase()] || [];
+    for (const entry of entries) {
+      for (const contract of entry.contracts || []) {
+        if (contract.isUS === false) continue;
+        const venue = contract.exchange || contract.listingExchange;
+        if (venue) return String(venue).toUpperCase().split('.')[0];
+      }
+    }
+  } catch {
+    /* optional lookup — UNKNOWN is survivable */
+  }
+  return null;
+}
+
+/**
  * Fundamentals live behind a Refinitiv entitlement and the endpoint has moved
  * between gateway versions, so several paths are tried and failure is not
  * fatal: the app simply scores without the fundamental component.
@@ -340,6 +367,9 @@ async function main() {
       await pace();
       const contract = await withRetry(`search ${symbol}`, () =>
         resolveContract(options.gateway, symbol, { debug: options.debug }));
+      if (options.debug && contract) {
+        console.log(`      resolved ${symbol}: ${JSON.stringify(contract)}`);
+      }
       if (!contract) {
         skipped.push([symbol, 'no matching US stock contract']);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (no contract)`);
@@ -357,6 +387,11 @@ async function main() {
         continue;
       }
 
+      if (!contract.exchange) {
+        await pace();
+        contract.exchange = await lookupExchange(options.gateway, symbol);
+      }
+
       let fundamentals = {};
       if (options.fundamentals) {
         await pace();
@@ -367,7 +402,8 @@ async function main() {
 
       const short = history.close.length < FULL_BARS ? ' (no SMA200 yet)' : '';
       console.log(
-        `${position} ${symbol.padEnd(6)} ${String(history.close.length).padStart(4)} bars  ` +
+        `${position} ${symbol.padEnd(6)} ${(contract.exchange || 'UNKNOWN').padEnd(7)} ` +
+        `${String(history.close.length).padStart(4)} bars  ` +
         `last ${history.dates.at(-1)}  $${history.close.at(-1)}${short}`,
       );
     } catch (error) {
@@ -397,6 +433,13 @@ async function main() {
   console.log(`   fundamentals  : ${withFundamentals}/${stocks.length} symbols`);
   console.log(`   sanity check  : ${stocks[0].ticker} last volume ${sampleVolume.toLocaleString('en-US')}`);
   console.log(`                   if that is 100x off, re-run with --volume-factor ${options.volumeFactor === 100 ? 1 : 100}`);
+  const unknownVenue = stocks.filter((stock) => !stock.exchange || stock.exchange === 'UNKNOWN');
+  if (unknownVenue.length) {
+    console.log(`\n   ⚠ exchange unresolved for ${unknownVenue.length} symbol(s): ${unknownVenue.map((s) => s.ticker).join(', ')}`);
+    console.log('     They still scan fine and appear under UNKNOWN in the exchange filter.');
+    console.log('     Re-run with --debug to see what the gateway returns for them.');
+  }
+
   if (skipped.length) {
     console.log(`\n   skipped ${skipped.length}:`);
     for (const [symbol, reason] of skipped) console.log(`     ${symbol.padEnd(6)} ${reason}`);
