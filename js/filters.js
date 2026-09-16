@@ -126,9 +126,15 @@ export function getField(key) {
   return FIELD_BY_KEY.get(key) || null;
 }
 
-/** Criteria with no filter active at all — the whole universe. */
+/**
+ * Criteria with no filter active at all — the whole universe.
+ *
+ * Deliberately empty. Defaulting to a hard-coded NYSE + NASDAQ list meant that
+ * a provider reporting anything else (ARCA, BATS, NASDAQ.NMS, a Canadian
+ * venue) matched nothing and could not be reset back into view.
+ */
 export function emptyCriteria() {
-  return { exchanges: ['NYSE', 'NASDAQ'] };
+  return {};
 }
 
 /**
@@ -143,9 +149,9 @@ export function normalizeCriteria(raw = {}) {
     if (value === undefined || value === null || value === '') continue;
 
     if (field.type === 'set') {
-      const list = (Array.isArray(value) ? value : [value]).filter((item) =>
-        field.options.includes(item),
-      );
+      const list = (Array.isArray(value) ? value : [value])
+        .map((item) => String(item).toUpperCase())
+        .filter(Boolean);
       if (list.length) criteria[field.key] = list;
     } else if (field.type === 'flag') {
       // Checkboxes arrive as `true`, URLs as the string '1', form posts as 'on'.
@@ -158,7 +164,6 @@ export function normalizeCriteria(raw = {}) {
     }
   }
 
-  if (!criteria.exchanges) criteria.exchanges = ['NYSE', 'NASDAQ'];
   return criteria;
 }
 

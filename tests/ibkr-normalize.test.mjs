@@ -61,6 +61,13 @@ test('still rejects a row whose only listed section is not a stock', () => {
   assert.equal(pickContract([{ conid: 1, symbol: 'AAPL', sections: [{ secType: 'BOND' }] }], 'AAPL'), null);
 });
 
+test('collapses venue suffixes in the exchange name', () => {
+  // NASDAQ.NMS and NASDAQ must land in the same bucket, or the exchange filter
+  // silently splits one exchange into two and matches neither.
+  const contract = pickContract([{ conid: 1, symbol: 'AAPL', description: 'NASDAQ.NMS' }], 'AAPL');
+  assert.equal(contract.exchange, 'NASDAQ');
+});
+
 test('returns null for a symbol with no stock listing', () => {
   assert.equal(pickContract(searchRows, 'ZZZZ'), null);
   assert.equal(pickContract(null, 'AAPL'), null);
