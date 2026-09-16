@@ -73,8 +73,9 @@
         <div>
           <h2 id="quick-scan-title">Quick scan</h2>
           <p class="section__lead">
-            The essentials from the full scanner. Set them here and Snake Eye opens the
-            results with these filters already applied.
+            The essentials from the full scanner. Leave a field empty to ignore it —
+            an empty form scans the whole universe. The greyed-out numbers are examples,
+            not defaults.
           </p>
         </div>
       </div>
@@ -91,32 +92,32 @@
         <fieldset class="quick-scan__group">
           <legend class="field__label">Price</legend>
           <div class="field-row">
-            <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" value="2" /></label>
-            <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" value="30" /></label>
+            <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" placeholder="2" /></label>
+            <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" placeholder="30" /></label>
           </div>
         </fieldset>
 
         <fieldset class="quick-scan__group">
           <legend class="field__label">Volume</legend>
           <div class="field-row">
-            <label class="field"><span class="field__label">Avg volume &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" value="500000" /></label>
-            <label class="field"><span class="field__label">Rel. volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" value="1.5" /></label>
+            <label class="field"><span class="field__label">Avg volume &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" placeholder="500000" /></label>
+            <label class="field"><span class="field__label">Rel. volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" placeholder="1.5" /></label>
           </div>
         </fieldset>
 
         <fieldset class="quick-scan__group">
           <legend class="field__label">RSI</legend>
           <div class="field-row">
-            <label class="field"><span class="field__label">Min</span><input type="number" name="rsiMin" min="0" max="100" value="40" /></label>
-            <label class="field"><span class="field__label">Max</span><input type="number" name="rsiMax" min="0" max="100" value="70" /></label>
+            <label class="field"><span class="field__label">Min</span><input type="number" name="rsiMin" min="0" max="100" placeholder="40" /></label>
+            <label class="field"><span class="field__label">Max</span><input type="number" name="rsiMax" min="0" max="100" placeholder="70" /></label>
           </div>
         </fieldset>
 
         <fieldset class="quick-scan__group quick-scan__group--wide">
           <legend class="field__label">Momentum</legend>
           <div class="check-grid">
-            <label class="check"><input type="checkbox" name="macdBullish" checked /> MACD bullish</label>
-            <label class="check"><input type="checkbox" name="aoPositive" checked /> Awesome Oscillator positive</label>
+            <label class="check"><input type="checkbox" name="macdBullish" /> MACD bullish</label>
+            <label class="check"><input type="checkbox" name="aoPositive" /> Awesome Oscillator positive</label>
             <label class="check"><input type="checkbox" name="priceAboveSma50" /> Price &gt; SMA50</label>
           </div>
         </fieldset>

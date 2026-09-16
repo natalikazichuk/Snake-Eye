@@ -14,6 +14,7 @@ import {
   applyFilters,
   countActiveFilters,
   criteriaFromQuery,
+  explainNoMatches,
   criteriaToQuery,
   describeCriteria,
   emptyCriteria,
@@ -266,15 +267,38 @@ function renderResults() {
   const rows = visibleRows();
 
   if (!rows.length) {
+    const searching = state.matches.length > 0;
+    // Three is enough to point at the culprit without turning the empty state
+    // into a report.
+    const blockers = searching ? [] : explainNoMatches(state.universe, state.criteria).slice(0, 3);
+
     body.replaceChildren(
       el('tr', {}, [
         el('td', { className: 'empty', colspan: String(COLUMNS.length) }, [
           el('p', { className: 'empty__title', text: 'No stocks matched.' }),
+          blockers.length
+            ? el('div', { className: 'empty__blockers' }, [
+                el('p', { className: 'empty__hint', text: 'What removed them:' }),
+                el(
+                  'ul',
+                  {},
+                  blockers.map((blocker) =>
+                    el('li', {}, [
+                      el('span', { text: blocker.label }),
+                      el('span', {
+                        className: 'empty__count',
+                        text: `${blocker.excluded} of ${blocker.total}`,
+                      }),
+                    ]),
+                  ),
+                ),
+              ])
+            : null,
           el('p', {
             className: 'empty__hint',
-            text: state.matches.length
+            text: searching
               ? 'No ticker matches that search — clear the search box to see the full result set.'
-              : 'Loosen a filter, widen the price range, or start from one of the saved strategies.',
+              : 'Loosen the filter above, or press Reset filters to see the whole universe.',
           }),
         ]),
       ]),

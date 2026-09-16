@@ -213,6 +213,27 @@ export function applyFilters(rows, criteria) {
   return rows.filter((row) => matchRow(row, criteria).passed);
 }
 
+/**
+ * Why a scan came back empty.
+ *
+ * Counts, per criterion, how many rows it rejects on its own, so the UI can say
+ * "Max price removed 5 of 5" instead of leaving the user to guess which of nine
+ * active filters is the one to loosen.
+ */
+export function explainNoMatches(rows, criteria) {
+  const counts = new Map();
+
+  for (const row of rows) {
+    for (const label of matchRow(row, criteria).failed) {
+      counts.set(label, (counts.get(label) || 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([label, excluded]) => ({ label, excluded, total: rows.length }))
+    .sort((a, b) => b.excluded - a.excluded);
+}
+
 /** Criteria -> URLSearchParams, so a scan can be shared or bookmarked. */
 export function criteriaToQuery(criteria) {
   const params = new URLSearchParams();

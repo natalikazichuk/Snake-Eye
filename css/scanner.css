@@ -206,3 +206,20 @@
 .empty { padding: 3rem 1rem !important; text-align: center; }
 .empty__title { margin: 0 0 0.35rem; color: var(--text-soft); font-weight: 600; }
 .empty__hint { margin: 0; color: var(--text-dim); font-size: 0.88rem; }
+
+.empty__blockers { max-width: 360px; margin: 0.75rem auto 0.9rem; }
+.empty__blockers ul { list-style: none; margin: 0.35rem 0 0; padding: 0; }
+
+.empty__blockers li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.empty__blockers li + li { margin-top: 0.25rem; }
+.empty__count { font-family: var(--mono); color: var(--warn); white-space: nowrap; }
