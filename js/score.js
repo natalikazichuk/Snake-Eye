@@ -127,23 +127,53 @@ export function scoreLabel(total) {
 }
 
 /**
+ * True when the provider actually supplied fundamentals for this row.
+ *
+ * Interactive Brokers serves fundamentals only with a Refinitiv entitlement,
+ * so a live universe frequently has none. Scoring a missing sub-score as zero
+ * would dock every stock the same 15 points and quietly compress the whole
+ * ranking, so instead the component is dropped and the remaining weights are
+ * re-normalised to 100.
+ */
+function hasFundamentals(f) {
+  if (!f) return false;
+  return ['marketCap', 'revenue', 'eps', 'pe', 'roe', 'revenueGrowth'].some((key) => isNum(f[key]));
+}
+
+/**
  * Score one row (`{ fundamentals, metrics }`) and return the headline number
  * plus the full breakdown the stock page renders.
  */
 export function scoreStock(row) {
+  const fundamentalsAvailable = hasFundamentals(row.fundamentals);
+
   const components = {
     technical: technicalScore(row.metrics),
     momentum: momentumScore(row.metrics),
     volume: volumeScore(row.metrics),
-    fundamental: fundamentalScore(row.fundamentals),
   };
+  if (fundamentalsAvailable) components.fundamental = fundamentalScore(row.fundamentals);
+
+  const activeWeight = Object.keys(components).reduce(
+    (sum, key) => sum + COMPONENT_WEIGHTS[key],
+    0,
+  );
 
   const total = Math.round(
-    Object.entries(COMPONENT_WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + components[key].score * weight,
+    Object.keys(components).reduce(
+      (sum, key) => sum + components[key].score * (COMPONENT_WEIGHTS[key] / activeWeight),
       0,
     ),
   );
 
-  return { total, ...scoreLabel(total), components };
+  return {
+    total,
+    ...scoreLabel(total),
+    components,
+    fundamentalsAvailable,
+    /** Effective weight of each component after re-normalisation. */
+    weights: Object.fromEntries(
+      Object.keys(components).map((key) => [key, COMPONENT_WEIGHTS[key] / activeWeight]),
+    ),
+  };
 }

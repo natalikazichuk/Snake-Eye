@@ -17,9 +17,16 @@ import { scoreStock } from './score.js';
 
 /** Resolved against this module's URL, so pages/ and the root both work. */
 const STOCKS_URL = new URL('../data/stocks.json', import.meta.url);
+const LOCAL_STOCKS_URL = new URL('../data/stocks.local.json', import.meta.url);
 const PRESETS_URL = new URL('../data/presets.json', import.meta.url);
 
-/** Stage 4: point this at your own backend, never at a keyed provider URL. */
+/**
+ * Real market data pulled from Interactive Brokers lands in
+ * `data/stocks.local.json` (see scripts/ibkr-ingest.mjs). That file is
+ * git-ignored on purpose: it is your own subscription's data, it goes stale
+ * daily, and a public repository is not the place for either. When it is
+ * present it wins; otherwise the committed demo universe is used.
+ */
 const REMOTE_ENDPOINT = null;
 
 let universePromise = null;
@@ -58,20 +65,57 @@ function buildRow(stock, meta) {
     exchange: stock.exchange,
     sector: stock.sector,
     currency: stock.currency || 'USD',
-    fundamentals: stock.fundamentals,
+    fundamentals: stock.fundamentals || {},
     metrics,
-    dates: sessionDates(meta.lastSession, stock.history.close.length),
+    dates: stock.history.dates?.length === stock.history.close.length
+      ? stock.history.dates
+      : sessionDates(meta.lastSession, stock.history.close.length),
   };
   row.score = scoreStock(row);
   return row;
 }
 
+/** Local IBKR snapshot if one has been ingested, otherwise the demo universe. */
+async function fetchPayload() {
+  if (REMOTE_ENDPOINT) return fetchJson(`${REMOTE_ENDPOINT}/universe`);
+
+  try {
+    const local = await fetchJson(LOCAL_STOCKS_URL);
+    if (local?.stocks?.length) {
+      local.meta = { ...local.meta, source: 'data/stocks.local.json' };
+      return local;
+    }
+  } catch {
+    // No local snapshot (the usual case on a fresh clone) — fall through.
+  }
+
+  const demo = await fetchJson(STOCKS_URL);
+  demo.meta = { ...demo.meta, source: 'data/stocks.json' };
+  return demo;
+}
+
 async function fetchUniverse() {
-  const payload = await fetchJson(REMOTE_ENDPOINT ? `${REMOTE_ENDPOINT}/universe` : STOCKS_URL);
+  const payload = await fetchPayload();
   const meta = payload.meta || {};
   const rows = payload.stocks.map((stock) => buildRow(stock, meta));
   rows.sort((a, b) => b.score.total - a.score.total);
+
+  // Fundamental filters and the fundamental sub-score only make sense when the
+  // provider actually supplied fundamentals; IBKR often does not.
+  meta.hasFundamentals = rows.some((row) => row.fundamentals && row.fundamentals.marketCap !== null && row.fundamentals.marketCap !== undefined);
+  meta.provider = meta.provider || (meta.synthetic === false ? 'live' : 'demo');
+
   return { meta, rows };
+}
+
+/** One line describing where the loaded universe came from. */
+export function describeSource(meta, symbolCount) {
+  const provider = meta.provider === 'IBKR' ? 'Interactive Brokers' : meta.provider === 'demo' ? 'demo data' : meta.provider;
+  const parts = [`${symbolCount} symbols`];
+  if (meta.lastSession) parts.push(`session ${meta.lastSession}`);
+  parts.push(provider);
+  if (meta.provider === 'IBKR') parts.push('end of day');
+  return parts.join(' · ');
 }
 
 /** Load (and cache) the scored universe. */

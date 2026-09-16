@@ -160,7 +160,7 @@
           <p class="results-meta">
             <strong id="results-count">0 of 0</strong> matched
             <span class="results-meta__sep">·</span>
-            <span id="data-stamp">loading…</span>
+            <span id="data-stamp" data-source-stamp>loading…</span>
             <span id="results-shown" class="results-meta__shown"></span>
           </p>
         </div>
@@ -172,6 +172,12 @@
 
       <div class="chip-row" id="active-filters"></div>
 
+      <p class="notice notice--compact" id="fundamentals-notice" hidden>
+        This dataset has no fundamentals — Interactive Brokers only serves them with a
+        Refinitiv entitlement. The fundamental filters below will match nothing, and the
+        Snake Score is weighted across the technical, momentum and volume components only.
+      </p>
+
       <div class="table-wrap panel">
         <table class="results-table">
           <caption class="visually-hidden">Stocks matching the current filters, sortable by column</caption>
@@ -180,7 +186,7 @@
         </table>
       </div>
 
-      <p class="disclaimer">
+      <p class="disclaimer" data-disclaimer>
         <strong>Demo data.</strong> Tickers and prices in this build are generated, not real
         market data. The Snake Score ranks how closely a stock fits the selected criteria —
         it is not a forecast and not investment advice.

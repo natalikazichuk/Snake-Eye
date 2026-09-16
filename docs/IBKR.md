@@ -1,0 +1,178 @@
+# Snake Eye — real data from Interactive Brokers
+
+Snake Eye ships with a synthetic demo universe so it runs anywhere. This page
+covers the other mode: pulling **your own** IBKR data onto **your own** machine,
+for personal use.
+
+```text
+IB Gateway (localhost)  ←  your IBKR login and entitlements
+        ↓
+scripts/ibkr-ingest.mjs  ←  daily bars, one symbol at a time, paced
+        ↓
+data/stocks.local.json   ←  git-ignored
+        ↓
+Snake Eye in the browser ←  prefers the local file over the demo data
+```
+
+Nothing is uploaded, no API key is stored in this repository, and the data file
+never leaves your machine.
+
+---
+
+## 1. What you need
+
+| | |
+|---|---|
+| IBKR account | Paper accounts work for historical bars. |
+| Market data subscription | US equities: *NYSE (Network A/CTA)*, *NASDAQ (Network C/UP)*, or the *US Securities Snapshot and Futures Value Bundle*. Delayed data is enough for end-of-day bars. |
+| Client Portal Gateway | Free download from IBKR ("Client Portal API" / `clientportal.gw`). Java 8+ required. |
+| Node.js 18+ | Already needed for the demo data generator. |
+
+Fundamentals (P/E, ROE, revenue growth …) need a separate **Refinitiv/Reuters
+Worldwide Fundamentals** subscription. Without it the ingest still works — see
+§5.
+
+---
+
+## 2. Start the gateway
+
+```bash
+cd clientportal.gw
+./bin/run.sh root/conf.yaml          # Windows: bin\run.bat root\conf.yaml
+```
+
+Then open **https://localhost:5000** in a browser and log in. The certificate is
+self-signed, so the browser warns once — that is expected for a local gateway.
+
+The session expires roughly every 24 hours, so the login is a daily step. Check
+it any time with:
+
+```bash
+curl -sk https://localhost:5000/v1/api/iserver/auth/status
+# {"authenticated":true,"connected":true,"competing":false, ...}
+```
+
+`competing: true` means another session (TWS, the mobile app, another gateway)
+holds the connection — log out of that one first.
+
+---
+
+## 3. Pick your symbols
+
+`config/universe.json` is your scan list:
+
+```json
+{ "symbols": ["AAPL", "MSFT", "NVDA", "..."] }
+```
+
+Keep it to what you actually watch. IBKR paces historical requests (§4), so:
+
+| Symbols | Roughly |
+|---:|---|
+| 50 | 3–4 minutes |
+| 200 | ~35 minutes |
+| 500 | ~1.5 hours |
+| 3000 | 8+ hours — use a different provider for a full-market sweep |
+
+---
+
+## 4. Run the ingest
+
+```bash
+npm run ingest                    # everything in config/universe.json
+npm run ingest -- --limit 5       # quick smoke test
+npm run ingest -- --dry-run       # print the plan, call nothing
+npm run ingest -- --period 2y     # more history (SMA200 needs 200+ sessions)
+```
+
+Output:
+
+```text
+[  1/ 50] AAPL    250 bars  last 2026-09-15  $331.34
+[  2/ 50] MSFT    250 bars  last 2026-09-15  $512.80
+...
+✓ 50 symbols written to data/stocks.local.json
+```
+
+Reload Snake Eye in the browser — it picks the local file up automatically, and
+the header stamp changes from `demo data` to `Interactive Brokers · end of day`.
+
+**Pacing.** IBKR documents a limit of about 60 historical-data requests per 10
+minutes; exceeding it gets the session throttled. The script tracks its own
+request timestamps and waits rather than tripping the limit, so a long run is
+slow by design, not stuck.
+
+---
+
+## 5. Two things that will bite you
+
+### Volume comes in lots
+
+The Client Portal reports US equity volume in **lots of 100 shares**. The script
+multiplies by `--volume-factor` (default **100**) to get shares. Relative volume,
+every volume filter and part of the Snake Score depend on this being right, so
+verify once:
+
+```text
+sanity check : AAPL last volume 17,828,882
+```
+
+Compare that with the volume your broker or any quote page shows for the same
+session. If it is 100x off, re-run with `--volume-factor 1`.
+
+### Fundamentals are often missing
+
+Without the Refinitiv entitlement the fundamentals request returns nothing. That
+is handled rather than hidden:
+
+- fundamental fields stay `null` (never `0` — "no data" and "zero revenue" are
+  different claims);
+- the Snake Score **drops** the fundamental component and re-weights the rest to
+  100 (technical 47%, momentum 29%, volume 24%), so no stock is silently docked
+  15 points;
+- the scanner shows a banner saying the fundamental filters cannot match;
+- the stock page says so instead of printing dashes.
+
+---
+
+## 6. Keeping it personal
+
+`data/stocks.local.json` is in `.gitignore` on purpose:
+
+- it is data from **your** subscription, and redistributing exchange data (for
+  example by committing it to a public repository or publishing it on GitHub
+  Pages) is what the exchange agreements prohibit;
+- it goes stale every session;
+- the committed demo universe keeps the public repo useful without it.
+
+If you ever want the demo data back: delete the local file, or regenerate it with
+`npm run demo-data`.
+
+---
+
+## 7. Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `ECONNREFUSED` | Gateway is not running, or is on another port — pass `--gateway https://localhost:5001`. |
+| `not authenticated` | Open https://localhost:5000 and log in. The session expires daily. |
+| Everything skipped, "no contract" | The gateway is up but not logged in, or the symbols are not US-listed stocks. |
+| Volume looks 100x wrong | `--volume-factor` (see §5). |
+| `only N bars` | IBKR returned a short history for a recent listing. `--period 2y` helps; under 200 sessions there is no SMA200 and the trend filters have no data for that symbol. |
+| Prices look wrong across a split | Bars must be split-adjusted. The Client Portal returns adjusted history by default; if you switch to the TWS API, use `whatToShow=ADJUSTED_LAST`. |
+| `competing` session warning | TWS or another gateway holds the connection. |
+| `404` for `data/stocks.local.json` in the browser console | Normal before your first ingest: the app probes for the local file and falls back to the demo universe. |
+
+---
+
+## 8. If you outgrow this
+
+The ingest writes a plain JSON file, which is the right shape for one person and
+a few hundred symbols. Beyond that:
+
+- **More symbols than IBKR pacing allows** → a bulk EOD provider for the sweep,
+  IBKR for detail and (later) order entry. `scripts/lib/ibkr-normalize.mjs` is
+  already the provider adapter — a second adapter writes the same shape.
+- **Scheduled refresh** → a cron entry running `npm run ingest` after the close.
+- **Multiple devices** → that is the point where a small backend (`docs/API.md`)
+  starts to pay for itself, not before.

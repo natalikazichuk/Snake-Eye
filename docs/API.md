@@ -1,6 +1,16 @@
 # Snake Eye — data and API
 
-## Today: a bundled file
+## Two sources today
+
+1. **Bundled demo file** — `data/stocks.json`, described below.
+2. **Interactive Brokers** — `scripts/ibkr-ingest.mjs` writes the same shape into
+   `data/stocks.local.json` from a gateway running on your own machine. See
+   [IBKR.md](IBKR.md). This is the personal-use path and needs no backend at all.
+
+The rest of this page describes the payload contract both share, and what a hosted
+backend would add.
+
+## The bundled file
 
 The MVP reads `data/stocks.json` with `fetch`. Nothing else is requested, and there are
 no keys, accounts or third-party calls anywhere in the frontend.

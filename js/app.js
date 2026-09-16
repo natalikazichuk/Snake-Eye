@@ -126,6 +126,46 @@ export function renderError(container, error) {
   );
 }
 
+/**
+ * Tell every page what it is looking at.
+ *
+ * The pages ship with the demo-data disclaimer in their markup; once a real
+ * IBKR snapshot is loaded, saying "demo data" would be simply untrue, so both
+ * the stamp and the disclaimer are rewritten here.
+ */
+export function renderSourceInfo(meta = {}, symbolCount = 0) {
+  const live = meta.provider === 'IBKR';
+
+  const stamp = [
+    `${symbolCount} symbols`,
+    meta.lastSession ? `session ${meta.lastSession}` : null,
+    live ? 'Interactive Brokers · end of day' : 'demo data',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  qsa('[data-source-stamp]').forEach((node) => {
+    node.textContent = stamp;
+  });
+
+  if (!live) return;
+
+  qsa('[data-disclaimer]').forEach((node) => {
+    node.replaceChildren(
+      el('strong', { text: 'Your IBKR data. ' }),
+      el('span', {
+        text:
+          `End-of-day bars from your own Interactive Brokers subscription (last session ${meta.lastSession || DASH}), ` +
+          'for personal use — not redistributed and not live intraday. ' +
+          (meta.hasFundamentals
+            ? ''
+            : 'Fundamentals were not supplied, so the Snake Score is weighted across the technical, momentum and volume components only. ') +
+          'The Snake Score measures fit to the selected criteria — it is not a forecast and not investment advice.',
+      }),
+    );
+  });
+}
+
 /* -------------------------------------------------------------- page shell */
 
 function markActiveNav() {
@@ -193,10 +233,7 @@ async function initHomeHighlights() {
       ),
     );
 
-    const stamp = qs('#home-data-stamp');
-    if (stamp && meta.lastSession) {
-      stamp.textContent = `${rows.length} symbols · session ${meta.lastSession} · demo data`;
-    }
+    renderSourceInfo(meta, rows.length);
 
     const presetList = qs('#home-presets');
     if (presetList) {

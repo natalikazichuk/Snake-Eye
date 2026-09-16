@@ -14,8 +14,8 @@ import { clear, count, list } from './watchlist.js';
 const ROADMAP = [
   ['MVP — filters, Snake Score, results table', 'done'],
   ['Stage 2 — price, volume, RSI, MACD and AO charts', 'done'],
-  ['Stage 3 — fundamentals from a real provider', 'planned'],
-  ['Stage 4 — backend + live market data', 'planned'],
+  ['Stage 3 — real IBKR bars via scripts/ibkr-ingest.mjs', 'done'],
+  ['Stage 4 — fundamentals (needs a Refinitiv entitlement)', 'planned'],
   ['Stage 5 — deploy (GitHub Pages, then Vercel)', 'planned'],
   ['Stage 6 — alerts on user conditions', 'planned'],
   ['Stage 7 — AI scanner (plain-language queries)', 'planned'],
@@ -66,8 +66,10 @@ async function init() {
     const { meta, rows } = await loadUniverse();
     const bars = rows[0]?.metrics.series.close.length ?? 0;
     source.replaceChildren(
-      row('Provider', meta.synthetic === false ? 'live feed' : 'bundled demo data', 'is-flat'),
-      row('File', 'data/stocks.json'),
+      row('Provider', meta.provider === 'IBKR' ? 'Interactive Brokers (your subscription)' : 'bundled demo data'),
+      row('File', meta.source || 'data/stocks.json'),
+      row('Bar size', meta.barSize || '1d'),
+      row('Fundamentals', meta.hasFundamentals ? 'available' : 'not supplied — score re-weighted', meta.hasFundamentals ? 'is-up' : ''),
       row('Symbols', String(rows.length)),
       row('Sessions per symbol', String(bars)),
       row('First session', meta.firstSession || '—'),

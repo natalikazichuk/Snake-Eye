@@ -50,13 +50,19 @@ This is the **MVP** described in the project plan, plus the Stage 2 charts:
 | Watchlist in `localStorage` | ✅ |
 | Saved strategies (presets) | ✅ |
 | Responsive design | ✅ |
-| Real market data + backend | ⏳ Stage 4 |
-| Alerts, AI scanner | ⏳ Stage 6–7 |
+| **Real data from Interactive Brokers** | ✅ personal use, end of day |
+| Fundamentals from IBKR | ⚠️ needs a Refinitiv entitlement |
+| Backend, alerts, backtesting | ⏳ later stages |
 
-**The data in this build is synthetic.** `data/stocks.json` holds 72 invented tickers
-with 220 generated sessions each, produced by `scripts/generate-stocks.mjs`. No ticker
-here maps to a real company — that is deliberate, so nothing in the UI can be mistaken
-for real market data.
+Snake Eye runs in either of two modes:
+
+- **Demo** — the committed `data/stocks.json`: 72 invented tickers with 220 generated
+  sessions each, produced by `scripts/generate-stocks.mjs`. No ticker maps to a real
+  company, deliberately, so nothing in the UI can be mistaken for real market data.
+- **Your IBKR data** — `npm run ingest` pulls daily bars for your own symbol list
+  through a local IB Gateway into `data/stocks.local.json`, which the app prefers when
+  it is present. That file is git-ignored: it is your subscription's data, and it is
+  for personal use, not redistribution. See **[docs/IBKR.md](docs/IBKR.md)**.
 
 ---
 
@@ -74,8 +80,27 @@ npx http-server -p 8080 -c-1 .
 Regenerate the demo universe (deterministic, same seed → same data):
 
 ```bash
-node scripts/generate-stocks.mjs
+npm run demo-data
 ```
+
+Run the tests (no dependencies, no network, no gateway needed):
+
+```bash
+npm test          # 23 tests: indicator maths and IBKR normalisation
+```
+
+### Real data from Interactive Brokers
+
+```bash
+# 1. start the IBKR Client Portal Gateway and log in at https://localhost:5000
+# 2. list the symbols you care about in config/universe.json
+npm run ingest -- --limit 5     # smoke test
+npm run ingest                  # the full list
+```
+
+The scanner header then reads `Interactive Brokers · end of day` instead of
+`demo data`. Setup, pacing limits, the volume-in-lots trap and troubleshooting are all
+in [docs/IBKR.md](docs/IBKR.md).
 
 Deploy: push to GitHub and enable Pages on the branch root. There is nothing to build.
 
@@ -109,14 +134,24 @@ snake-eye/
 │   ├── watchlist.js        localStorage watchlist
 │   ├── watchlist-page.js   watchlist page controller
 │   └── settings.js         settings page controller
+├── config/
+│   └── universe.json       your IBKR scan list
 ├── data/
-│   ├── stocks.json         generated demo universe
+│   ├── stocks.json         generated demo universe (committed)
+│   ├── stocks.local.json   your IBKR snapshot (git-ignored, created by the ingest)
 │   └── presets.json        saved strategies
 ├── scripts/
-│   └── generate-stocks.mjs the data generator
+│   ├── generate-stocks.mjs demo data generator
+│   ├── ibkr-ingest.mjs     pulls real bars from a local IB Gateway
+│   └── lib/
+│       └── ibkr-normalize.mjs  IBKR payloads -> the app's data shape
+├── tests/
+│   ├── indicators.test.mjs     indicator maths, edge cases and invariants
+│   └── ibkr-normalize.test.mjs the IBKR mapping, no gateway required
 └── docs/
     ├── PROJECT.md          architecture and data flow
-    ├── API.md              data contract and the road to live data
+    ├── IBKR.md             real data: setup, pacing, entitlements
+    ├── API.md              data contract and the road to a backend
     └── INDICATORS.md       how each indicator is computed
 ```
 
@@ -165,6 +200,11 @@ Checks are graded rather than pass/fail wherever a metric is continuous — ADX 
 higher than ADX 21 instead of both simply clearing a threshold. The stock page shows the
 full breakdown, line by line. Weights live in `js/score.js`.
 
+When a data source supplies no fundamentals — which is the normal case on IBKR without a
+Refinitiv entitlement — the fundamental sub-score is **dropped** and the remaining weights
+are re-normalised to 100 (technical 47%, momentum 29%, volume 24%). Scoring it as zero
+instead would dock every stock the same 15 points and quietly flatten the ranking.
+
 ---
 
 ## Important
@@ -183,9 +223,13 @@ quality, exchange licensing rules, and trading fees and risk.
 сканер со всеми фильтрами, Snake Score, таблица результатов, страница акции с графиками
 и watchlist в `localStorage`.
 
-Данные в этой версии — сгенерированные демонстрационные (`data/stocks.json`), реальные
-тикеры не используются. `Snake Score` — внутренняя оценка соответствия заданным
-критериям, а не прогноз цены и не инвестиционная рекомендация.
+Два режима данных: демонстрационный (`data/stocks.json`, вымышленные тикеры) и реальный —
+`npm run ingest` забирает дневные бары по вашему списку символов через локальный IB
+Gateway в `data/stocks.local.json`. Этот файл не попадает в git: это данные вашей
+подписки, только для личного использования. Настройка — в [docs/IBKR.md](docs/IBKR.md).
+
+`Snake Score` — внутренняя оценка соответствия заданным критериям, а не прогноз цены и не
+инвестиционная рекомендация.
 
 ## License
 

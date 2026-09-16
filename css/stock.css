@@ -184,3 +184,5 @@
 }
 
 .watch-card__remove:hover { background: rgba(255, 77, 103, 0.12); color: var(--down); }
+
+.stat-list__empty { margin: 0; color: var(--text-dim); font-size: 0.88rem; line-height: 1.5; }

@@ -20,7 +20,6 @@ import {
   normalizeCriteria,
 } from './filters.js';
 import {
-  DASH,
   el,
   direction,
   formatCompact,
@@ -32,6 +31,7 @@ import {
   qs,
   qsa,
   renderError,
+  renderSourceInfo,
   signalDot,
   stockHref,
 } from './app.js';
@@ -349,9 +349,12 @@ async function initScannerPage() {
     const { rows, meta } = await loadUniverse();
     state.universe = rows;
 
-    const stamp = qs('#data-stamp');
-    if (stamp) {
-      stamp.textContent = `${rows.length} symbols · session ${meta.lastSession || DASH} · demo data`;
+    renderSourceInfo(meta, rows.length);
+
+    // Fundamental filters silently match nothing when the provider sent no
+    // fundamentals, so say it out loud instead of letting scans come back empty.
+    if (meta.hasFundamentals === false) {
+      qs('#fundamentals-notice')?.removeAttribute('hidden');
     }
 
     const presets = await initPresets(form);
