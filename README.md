@@ -75,10 +75,11 @@ The app loads `data/stocks.json` with `fetch`, so it needs a web server — open
 `index.html` straight from the file system will not work.
 
 ```bash
-# any static server will do
-npx http-server -p 8080 -c-1 .
-# then open http://localhost:8080
+npm run serve        # then open http://localhost:8080
 ```
+
+The first run fetches a tiny static server through `npx`. Any other static server
+works just as well.
 
 Regenerate the demo universe (deterministic, same seed → same data):
 
