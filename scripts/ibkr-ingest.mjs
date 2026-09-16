@@ -60,6 +60,7 @@ function parseArgs(argv) {
     limit: null,
     fundamentals: true,
     dryRun: false,
+    debug: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -76,6 +77,7 @@ function parseArgs(argv) {
       case '--limit': options.limit = Number(next()); break;
       case '--no-fundamentals': options.fundamentals = false; break;
       case '--dry-run': options.dryRun = true; break;
+      case '--debug': options.debug = true; break;
       case '--help':
       case '-h':
         console.log(HELP);
@@ -104,6 +106,7 @@ const HELP = `Snake Eye — IBKR ingest
   --limit <n>          only the first n symbols
   --no-fundamentals    skip fundamentals
   --dry-run            print the plan without calling the gateway
+  --debug              print the raw gateway reply when a symbol cannot be resolved
 `;
 
 /* ------------------------------------------------------------------- http */
@@ -113,17 +116,22 @@ const HELP = `Snake Eye — IBKR ingest
  * verification is disabled for this one connection only — never globally, and
  * never for a remote host.
  */
-function request(url, { timeout = 30000 } = {}) {
+function request(url, { timeout = 30000, method = 'GET', body = null } = {}) {
   const target = new URL(url);
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(target.hostname);
   const transport = target.protocol === 'http:' ? http : https;
+  const payload = body === null ? null : JSON.stringify(body);
 
   return new Promise((resolvePromise, reject) => {
     const req = transport.request(
       target,
       {
-        method: 'GET',
-        headers: { Accept: 'application/json', 'User-Agent': 'snake-eye-ingest' },
+        method,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'snake-eye-ingest',
+          ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
+        },
         rejectUnauthorized: !(isLocal && target.protocol === 'https:'),
       },
       (res) => {
@@ -149,6 +157,7 @@ function request(url, { timeout = 30000 } = {}) {
 
     req.setTimeout(timeout, () => req.destroy(new Error(`Timeout after ${timeout}ms: ${target.pathname}`)));
     req.on('error', reject);
+    if (payload) req.write(payload);
     req.end();
   });
 }
@@ -207,11 +216,56 @@ async function checkAuth(gateway) {
   return status;
 }
 
-async function resolveContract(gateway, symbol) {
-  const rows = await request(
-    `${gateway}/v1/api/iserver/secdef/search?symbol=${encodeURIComponent(symbol)}&name=false&secType=STK`,
-  );
-  return pickContract(rows, symbol);
+/**
+ * Several `/iserver/*` endpoints answer with empty or error payloads until the
+ * brokerage session has been initialised, and `/iserver/accounts` is what does
+ * it. Authenticating in the browser is not enough on its own.
+ */
+async function initSession(gateway) {
+  try {
+    const accounts = await request(`${gateway}/v1/api/iserver/accounts`);
+    const count = accounts?.accounts?.length ?? 0;
+    return count;
+  } catch (error) {
+    console.warn(`⚠ Could not initialise the brokerage session: ${error.message}`);
+    console.warn('  Symbol lookups may come back empty. Re-login at the gateway if every symbol is skipped.');
+    return 0;
+  }
+}
+
+/**
+ * Contract lookup. Gateway builds differ: older ones take a GET with query
+ * parameters, newer ones expect a POST with a JSON body, and the shape of the
+ * reply varies with them. Try both before giving up on a symbol.
+ */
+async function resolveContract(gateway, symbol, { debug = false } = {}) {
+  const attempts = [
+    () => request(
+      `${gateway}/v1/api/iserver/secdef/search?symbol=${encodeURIComponent(symbol)}&name=false&secType=STK`,
+    ),
+    () => request(`${gateway}/v1/api/iserver/secdef/search`, {
+      method: 'POST',
+      body: { symbol, name: false, secType: 'STK' },
+    }),
+  ];
+
+  let lastPayload = null;
+  for (const attempt of attempts) {
+    try {
+      lastPayload = await attempt();
+    } catch (error) {
+      lastPayload = { error: error.message };
+      continue;
+    }
+    const picked = pickContract(lastPayload, symbol);
+    if (picked) return picked;
+  }
+
+  if (debug) {
+    console.log(`      raw search response for ${symbol}:`);
+    console.log(`      ${JSON.stringify(lastPayload).slice(0, 800)}`);
+  }
+  return null;
 }
 
 async function fetchHistory(gateway, conid, { period, bar }) {
@@ -273,7 +327,8 @@ async function main() {
   }
 
   await withRetry('auth', () => checkAuth(options.gateway));
-  console.log('   auth     : ok\n');
+  const accountCount = await initSession(options.gateway);
+  console.log(`   auth     : ok${accountCount ? ` (${accountCount} account${accountCount > 1 ? 's' : ''})` : ''}\n`);
 
   const pace = createPacer({ delay: options.delay });
   const stocks = [];
@@ -283,7 +338,8 @@ async function main() {
     const position = `[${String(index + 1).padStart(3)}/${symbols.length}]`;
     try {
       await pace();
-      const contract = await withRetry(`search ${symbol}`, () => resolveContract(options.gateway, symbol));
+      const contract = await withRetry(`search ${symbol}`, () =>
+        resolveContract(options.gateway, symbol, { debug: options.debug }));
       if (!contract) {
         skipped.push([symbol, 'no matching US stock contract']);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (no contract)`);
@@ -321,6 +377,10 @@ async function main() {
   }
 
   if (!stocks.length) {
+    if (skipped.every(([, reason]) => reason.includes('no matching'))) {
+      console.error('\nEvery symbol failed to resolve. Re-run with --debug to see what the gateway');
+      console.error('actually returns, and check that https://localhost:5000 is still logged in.');
+    }
     throw new Error('No symbols were ingested — nothing written. See the errors above.');
   }
 
