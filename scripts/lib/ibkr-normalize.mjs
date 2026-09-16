@@ -22,12 +22,20 @@ export const FULL_BARS = 200;
  * poison every scan that follows.
  */
 export function pickContract(rows, symbol) {
-  if (!Array.isArray(rows)) return null;
+  // Some builds answer with a bare array, others wrap it.
+  const list = Array.isArray(rows) ? rows : rows?.results || rows?.contracts;
+  if (!Array.isArray(list)) return null;
   const wanted = symbol.toUpperCase();
 
-  const candidates = rows.filter((row) => {
+  const candidates = list.filter((row) => {
     if (String(row.symbol || '').toUpperCase() !== wanted) return false;
-    const sections = row.sections || [];
+
+    // `sections` is only present when the gateway returns the unfiltered
+    // search. Asking for secType=STK drops it, so an absent list means "the
+    // server already filtered for us", not "this is not a stock" — rejecting
+    // those was skipping every symbol.
+    const sections = row.sections;
+    if (!Array.isArray(sections) || sections.length === 0) return true;
     return sections.some((section) => (section.secType || section.security_type) === 'STK');
   });
   if (!candidates.length) return null;

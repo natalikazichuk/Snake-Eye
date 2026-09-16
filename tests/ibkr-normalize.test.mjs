@@ -41,6 +41,26 @@ test('never resolves a ticker to a similarly named leveraged ETF', () => {
   assert.notEqual(contract.conid, 578561419);
 });
 
+test('accepts a filtered search result that carries no sections array', () => {
+  // Asking the gateway for secType=STK makes it drop `sections` from the reply.
+  // Treating that as "not a stock" skipped every symbol in a real run.
+  const contract = pickContract(
+    [{ conid: '265598', companyHeader: 'APPLE INC - NASDAQ', companyName: 'APPLE INC', symbol: 'AAPL', description: 'NASDAQ' }],
+    'AAPL',
+  );
+  assert.equal(contract.conid, 265598, 'a string conid is accepted and normalised to a number');
+  assert.equal(contract.exchange, 'NASDAQ');
+});
+
+test('accepts a reply wrapped in results/contracts', () => {
+  const contract = pickContract({ results: [{ conid: 265598, symbol: 'AAPL', description: 'NASDAQ' }] }, 'AAPL');
+  assert.equal(contract.conid, 265598);
+});
+
+test('still rejects a row whose only listed section is not a stock', () => {
+  assert.equal(pickContract([{ conid: 1, symbol: 'AAPL', sections: [{ secType: 'BOND' }] }], 'AAPL'), null);
+});
+
 test('returns null for a symbol with no stock listing', () => {
   assert.equal(pickContract(searchRows, 'ZZZZ'), null);
   assert.equal(pickContract(null, 'AAPL'), null);
