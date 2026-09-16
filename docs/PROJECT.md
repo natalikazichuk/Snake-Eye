@@ -90,6 +90,13 @@ from the final price and a share count, then perturbed.
 
 Regenerate with `node scripts/generate-stocks.mjs`. Same seed, same universe.
 
+**Ticker collisions.** The company names are invented, but four-letter symbols are a small
+space: 14 of the 72 demo symbols (WNDR, MORF, VRDN, XYZ, AMPH, IRON, FNGR, CLDR, SWFT,
+PYTH, HLIX, NEST, CORA, ABC) also exist as real listings somewhere. The demo record has
+nothing to do with the real issuer. Because a footnote was not enough to prevent that
+confusion in practice, demo mode now shows a `DEMO` badge in the header of every page and
+next to the ticker on the stock page.
+
 ## Roadmap
 
 | Stage | Contents | State |

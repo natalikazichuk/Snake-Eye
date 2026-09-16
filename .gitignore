@@ -4,3 +4,9 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Real IBKR data pulled by scripts/ibkr-ingest.mjs — personal, goes stale daily,
+# and must not be redistributed. Kept out of the repository on purpose.
+data/stocks.local.json
+config/conid-cache.json
+.env

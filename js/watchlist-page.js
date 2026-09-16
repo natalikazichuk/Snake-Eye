@@ -5,7 +5,7 @@
  * prices and Snake Scores from the current universe.
  */
 
-import { getStocks } from './api.js';
+import { getStocks, loadUniverse } from './api.js';
 import {
   direction,
   el,
@@ -16,6 +16,7 @@ import {
   formatSignedPercent,
   qs,
   renderError,
+  renderSourceInfo,
   stockHref,
 } from './app.js';
 import { clear, list, remove, subscribe } from './watchlist.js';
@@ -75,6 +76,13 @@ function renderCard(row) {
 async function render() {
   const container = qs('#watchlist');
   if (!container) return;
+
+  try {
+    const { meta, rows } = await loadUniverse();
+    renderSourceInfo(meta, rows.length);
+  } catch {
+    // The per-card render below reports loading failures properly.
+  }
 
   const tickers = list();
   qs('#watchlist-total').textContent = tickers.length ? `${tickers.length} saved` : '';

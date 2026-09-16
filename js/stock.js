@@ -6,7 +6,7 @@
  * fundamental tables.
  */
 
-import { getStock } from './api.js';
+import { loadUniverse } from './api.js';
 import { awesomeChart, macdChart, priceChart, rsiChart, volumeChart } from './charts.js';
 import {
   DASH,
@@ -22,6 +22,7 @@ import {
   qs,
   qsa,
   renderError,
+  renderSourceInfo,
 } from './app.js';
 import { has as inWatchlist, subscribe as onWatchlistChange, toggle as toggleWatchlist } from './watchlist.js';
 
@@ -66,6 +67,13 @@ function renderHeader(row) {
 
 function renderScore(row) {
   const { score } = row;
+
+  const note = qs('#score-note');
+  if (note) {
+    note.textContent = score.fundamentalsAvailable
+      ? 'Weighted from four sub-scores: technical 40%, momentum 25%, volume 20%, fundamental 15%. It measures fit to the setup, not future price.'
+      : 'No fundamentals in this dataset, so the score is weighted across the three available sub-scores: technical 47%, momentum 29%, volume 24%. It measures fit to the setup, not future price.';
+  }
   qs('#score-value').textContent = String(score.total);
   qs('#score-label').textContent = score.label;
   qs('#score-label').className = `score-panel__label tone-${score.tone}`;
@@ -155,6 +163,18 @@ function renderIndicators(row) {
 
 function renderFundamentals(row) {
   const f = row.fundamentals;
+
+  if (!row.score.fundamentalsAvailable) {
+    qs('#fundamentals').replaceChildren(
+      el('p', {
+        className: 'stat-list__empty',
+        text:
+          'Not supplied by this data source. Interactive Brokers serves fundamentals only with a Refinitiv entitlement; the Snake Score is weighted across the remaining components.',
+      }),
+    );
+    return;
+  }
+
   qs('#fundamentals').replaceChildren(
     statRow('Market cap', formatMoney(f.marketCap)),
     statRow('Revenue (TTM)', formatMoney(f.revenue)),
@@ -250,7 +270,12 @@ async function initStockPage() {
   const ticker = new URLSearchParams(window.location.search).get('ticker');
 
   try {
-    const row = ticker ? await getStock(ticker) : null;
+    const { rows, meta } = await loadUniverse();
+    const row = ticker ? rows.find((item) => item.ticker === ticker.trim().toUpperCase()) : null;
+
+    // Keep the page's data notice honest about where these prices came from.
+    renderSourceInfo(meta, rows.length);
+
     if (!row) {
       renderNotFound(ticker ? ticker.toUpperCase() : '');
       return;

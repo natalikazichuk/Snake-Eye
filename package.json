@@ -1,0 +1,14 @@
+{
+  "name": "snake-eye",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Stock market scanner for NYSE and NASDAQ — see the market, find the target.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "serve": "npx http-server -p 8080 -c-1 .",
+    "ingest": "node scripts/ibkr-ingest.mjs",
+    "demo-data": "node scripts/generate-stocks.mjs"
+  },
+  "license": "MIT"
+}

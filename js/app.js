@@ -126,6 +126,91 @@ export function renderError(container, error) {
   );
 }
 
+/**
+ * Tell every page what it is looking at.
+ *
+ * The pages ship with the demo-data disclaimer in their markup; once a real
+ * IBKR snapshot is loaded, saying "demo data" would be simply untrue, so both
+ * the stamp and the disclaimer are rewritten here.
+ */
+export function renderSourceInfo(meta = {}, symbolCount = 0) {
+  const live = meta.provider === 'IBKR';
+
+  const stamp = [
+    `${symbolCount} symbols`,
+    meta.lastSession ? `session ${meta.lastSession}` : null,
+    live ? 'Interactive Brokers · end of day' : 'demo data',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  qsa('[data-source-stamp]').forEach((node) => {
+    node.textContent = stamp;
+  });
+
+  markDemo(!live);
+
+  qsa('[data-disclaimer]').forEach((node) => {
+    node.replaceChildren(
+      el('strong', { text: live ? 'Your IBKR data. ' : 'Demo data. ' }),
+      el('span', {
+        text: live
+          ? `End-of-day bars from your own Interactive Brokers subscription (last session ${meta.lastSession || DASH}), ` +
+            'for personal use — not redistributed and not live intraday. ' +
+            (meta.hasFundamentals
+              ? ''
+              : 'Fundamentals were not supplied, so the Snake Score is weighted across the technical, momentum and volume components only. ') +
+            'The Snake Score measures fit to the selected criteria — it is not a forecast and not investment advice.'
+          : 'Every company, price and indicator on this page is generated. The symbols are invented, but a few of them ' +
+            'coincide with real listed tickers by accident — a symbol here is NOT the real company that trades under it. ' +
+            'Run the Interactive Brokers ingest (docs/IBKR.md) to scan real prices.',
+      }),
+    );
+  });
+}
+
+/**
+ * Demo mode has to be impossible to miss.
+ *
+ * Invented four-letter tickers collide with real listings (WNDR, MORF, VRDN,
+ * XYZ and others all exist somewhere), so a quiet footnote is not enough: a
+ * generated "WNDR" priced at $3.88 can be mistaken for the real company of the
+ * same symbol. The badge rides in the header of every page, and the stock page
+ * repeats it next to the exchange tag.
+ */
+function markDemo(isDemo) {
+  qsa('.brand').forEach((brand) => {
+    const existing = brand.querySelector('.demo-badge');
+    if (!isDemo) {
+      existing?.remove();
+      return;
+    }
+    if (existing) return;
+    brand.append(
+      el('span', {
+        className: 'demo-badge',
+        title: 'Generated sample data — not a real market feed',
+        text: 'DEMO',
+      }),
+    );
+  });
+
+  const heroLine = qs('#stock-ticker')?.parentElement;
+  if (!heroLine) return;
+  const existing = heroLine.querySelector('.demo-badge');
+  if (!isDemo) {
+    existing?.remove();
+  } else if (!existing) {
+    heroLine.append(
+      el('span', {
+        className: 'demo-badge demo-badge--lg',
+        title: 'Generated sample data — this is not the real company trading under this symbol',
+        text: 'DEMO — not a real company',
+      }),
+    );
+  }
+}
+
 /* -------------------------------------------------------------- page shell */
 
 function markActiveNav() {
@@ -193,10 +278,7 @@ async function initHomeHighlights() {
       ),
     );
 
-    const stamp = qs('#home-data-stamp');
-    if (stamp && meta.lastSession) {
-      stamp.textContent = `${rows.length} symbols · session ${meta.lastSession} · demo data`;
-    }
+    renderSourceInfo(meta, rows.length);
 
     const presetList = qs('#home-presets');
     if (presetList) {
