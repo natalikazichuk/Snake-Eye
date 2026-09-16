@@ -56,9 +56,12 @@ This is the **MVP** described in the project plan, plus the Stage 2 charts:
 
 Snake Eye runs in either of two modes:
 
-- **Demo** — the committed `data/stocks.json`: 72 invented tickers with 220 generated
-  sessions each, produced by `scripts/generate-stocks.mjs`. No ticker maps to a real
-  company, deliberately, so nothing in the UI can be mistaken for real market data.
+- **Demo** — the committed `data/stocks.json`: 72 invented companies with 220 generated
+  sessions each, produced by `scripts/generate-stocks.mjs`. The companies are fictional,
+  but be aware that **some of the invented four-letter symbols coincide with real listed
+  tickers** (WNDR, MORF, VRDN, XYZ, IRON and others all trade somewhere) — a symbol in the
+  demo universe is *not* the company that really trades under it. Every page carries a
+  `DEMO` badge while this data is loaded.
 - **Your IBKR data** — `npm run ingest` pulls daily bars for your own symbol list
   through a local IB Gateway into `data/stocks.local.json`, which the app prefers when
   it is present. That file is git-ignored: it is your subscription's data, and it is

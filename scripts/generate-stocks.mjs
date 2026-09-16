@@ -64,8 +64,12 @@ const SECTORS = [
 ];
 
 /**
- * Fictional universe. Every ticker below is invented: nothing here maps to a
- * real listed company, on purpose.
+ * Fictional universe: the companies below are invented.
+ *
+ * Note that four-letter symbols are a crowded space — several of these (WNDR,
+ * MORF, VRDN, XYZ, IRON …) happen to exist as real listings elsewhere. The
+ * records here have nothing to do with those issuers, which is why the UI
+ * shows a DEMO badge whenever this data is loaded.
  */
 const UNIVERSE = [
   ['ABC', 'Aurora Biocentric Corp', 'Healthcare'],
@@ -270,7 +274,7 @@ const payload = {
     lastSession: LAST_SESSION,
     synthetic: true,
     notice:
-      'Fictional demo data. Tickers, companies and prices are generated and do not represent any real security.',
+      'Fictional demo data. Companies and prices are generated. Some invented symbols coincide with real listed tickers by accident — a symbol here is not the company that really trades under it.',
   },
   stocks,
 };

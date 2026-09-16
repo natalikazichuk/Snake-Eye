@@ -120,6 +120,23 @@ a:hover { text-decoration: underline; }
 .brand__name { font-size: 1.02rem; }
 .brand__name em { font-style: normal; color: var(--accent); }
 
+.demo-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgba(247, 201, 72, 0.5);
+  border-radius: 999px;
+  background: rgba(247, 201, 72, 0.14);
+  color: var(--warn);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  vertical-align: middle;
+}
+
+.demo-badge--lg { font-size: 0.68rem; letter-spacing: 0.06em; padding: 0.2rem 0.6rem; }
+
 .site-nav { display: flex; align-items: center; gap: 0.35rem; }
 
 .site-nav a {
