@@ -36,24 +36,89 @@ Worldwide Fundamentals** subscription. Without it the ingest still works — see
 
 ## 2. Start the gateway
 
+### 2.1 Check Java
+
 ```bash
-cd clientportal.gw
-./bin/run.sh root/conf.yaml          # Windows: bin\run.bat root\conf.yaml
+java -version      # 8 or newer; 11+ recommended
 ```
 
-Then open **https://localhost:5000** in a browser and log in. The certificate is
-self-signed, so the browser warns once — that is expected for a local gateway.
+No Java means the gateway will not start at all — install a JDK first.
 
-The session expires roughly every 24 hours, so the login is a daily step. Check
-it any time with:
+### 2.2 Download and unpack
+
+Get `clientportal.gw.zip` from IBKR's *Client Portal API* page and unzip it
+somewhere permanent (not Downloads — you will start it every day):
+
+```bash
+mkdir -p ~/ibkr && cd ~/ibkr
+unzip ~/Downloads/clientportal.gw.zip -d clientportal.gw
+cd clientportal.gw
+chmod +x bin/run.sh                  # macOS / Linux only
+```
+
+### 2.3 Run it
+
+```bash
+./bin/run.sh root/conf.yaml          # macOS / Linux
+bin\run.bat root\conf.yaml           # Windows
+```
+
+The console prints a startup log ending with something like
+`Open https://localhost:5000 to login`. **Leave this terminal open** — closing it
+kills the gateway, and with it the ingest.
+
+### 2.4 Log in through the browser
+
+Open **https://localhost:5000**.
+
+The certificate is self-signed, so the browser blocks the page once: choose
+*Advanced → Proceed to localhost*. That warning is expected for a local gateway
+and is not a sign that something is wrong.
+
+Log in with your IBKR username and password, then confirm the push in IBKR
+Mobile (or your security device). When it succeeds the page says
+*Client login succeeds* — that tab can be closed, the gateway keeps the session.
+
+### 2.5 Verify from the command line
 
 ```bash
 curl -sk https://localhost:5000/v1/api/iserver/auth/status
 # {"authenticated":true,"connected":true,"competing":false, ...}
 ```
 
-`competing: true` means another session (TWS, the mobile app, another gateway)
-holds the connection — log out of that one first.
+| Response | Meaning |
+|---|---|
+| `authenticated: true, connected: true` | Ready — run `npm run ingest`. |
+| `authenticated: false` | Gateway is up, the browser login has not happened or has expired. |
+| `Connection refused` | The gateway is not running, or is on a different port. |
+| `competing: true` | TWS, the mobile app or another gateway holds the connection. Log out of that one. |
+
+### 2.6 Keeping the session alive
+
+The brokerage session drops after a few minutes of inactivity and the login
+itself expires roughly every 24 hours. The ingest keeps making requests while it
+runs, so a run never goes stale mid-way; between runs, re-open
+https://localhost:5000 or ping:
+
+```bash
+curl -sk -X POST https://localhost:5000/v1/api/tickle
+```
+
+### 2.7 If port 5000 is taken
+
+On macOS, **AirPlay Receiver occupies port 5000** — the symptom is a gateway
+that seems to start while `https://localhost:5000` shows something that is not
+IBKR. Either turn AirPlay Receiver off in *System Settings → General → AirDrop
+& Handoff*, or move the gateway:
+
+```yaml
+# root/conf.yaml
+listenPort: 5001
+```
+
+```bash
+npm run ingest -- --gateway https://localhost:5001
+```
 
 ---
 
