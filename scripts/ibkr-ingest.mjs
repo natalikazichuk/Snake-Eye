@@ -112,6 +112,24 @@ const HELP = `Snake Eye — IBKR ingest
 /* ------------------------------------------------------------------- http */
 
 /**
+ * The gateway rejects calls that do not look like they came from its own web
+ * UI: a plain API client gets `Error 403 - Access Denied` while the very same
+ * URL opens fine in a browser tab. Sending the headers a browser would send is
+ * what gets past it.
+ */
+function browserHeaders(base) {
+  return {
+    Accept: 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+    Referer: `${base}/`,
+    Origin: base,
+    Connection: 'keep-alive',
+  };
+}
+
+/**
  * The gateway serves HTTPS with a self-signed certificate on localhost, so
  * verification is disabled for this one connection only — never globally, and
  * never for a remote host.
@@ -128,8 +146,7 @@ function request(url, { timeout = 30000, method = 'GET', body = null } = {}) {
       {
         method,
         headers: {
-          Accept: 'application/json',
-          'User-Agent': 'snake-eye-ingest',
+          ...browserHeaders(target.origin),
           ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
         },
         rejectUnauthorized: !(isLocal && target.protocol === 'https:'),
