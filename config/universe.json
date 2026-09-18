@@ -1,11 +1,11 @@
 {
   "comment": "Symbols Snake Eye pulls from Interactive Brokers. Edit freely — this is your personal scan list. Keep it to what you actually watch: IBKR paces historical requests, so 50 symbols is comfortable and 500 is an overnight job.",
+  "listName": "Under $10",
+  "verified": "Prices checked against IBKR on the 2026-09-17 session; every symbol closed below $10. Prices move — re-check before relying on the threshold.",
   "symbols": [
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "AVGO", "TSLA", "AMD", "NFLX",
-    "CRM", "ORCL", "ADBE", "INTC", "MU", "QCOM", "TXN", "PLTR", "SMCI", "ARM",
-    "JPM", "BAC", "GS", "MS", "V", "MA", "AXP", "SCHW", "C", "WFC",
-    "XOM", "CVX", "COP", "SLB", "OXY", "FCX", "NEM", "CAT", "DE", "BA",
-    "UNH", "LLY", "JNJ", "PFE", "MRK", "ABBV", "TMO", "AMGN", "GILD", "MRNA",
-    "WMT", "COST", "HD", "NKE", "SBUX", "MCD", "DIS", "UBER", "ABNB", "RIVN"
+    "BLNK", "SNDL", "EVGO", "NNDM", "PLUG",
+    "AMC", "GRAB", "BBAI", "ABEV", "CRON",
+    "BBD", "NIO", "TLRY", "LCID", "CLOV",
+    "PTON", "RIG", "LUMN", "ITUB", "CHPT"
   ]
 }
