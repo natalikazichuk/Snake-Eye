@@ -117,10 +117,31 @@ curl -sk https://localhost:5000/v1/api/iserver/auth/status
 
 ### 2.6 Keeping the session alive
 
-The brokerage session drops after a few minutes of inactivity and the login
-itself expires roughly every 24 hours. The ingest keeps making requests while it
-runs, so a run never goes stale mid-way; between runs, re-open
-https://localhost:5000 or ping:
+The brokerage session drops after a few minutes of inactivity, which is why an
+ingest that worked in the morning fails at lunchtime with nothing having
+changed. Leave this running in its own window while you work:
+
+```bash
+npm run keepalive
+```
+
+```text
+🐍 Keeping the IBKR session alive — https://localhost:5000, every 60s
+   Leave this window open while you work. Ctrl+C to stop.
+
+10:53:47  ✓ session alive
+```
+
+It says what it finds rather than failing silently: a session that expired, a
+competing session from TWS or the mobile app, or a gateway whose window was
+closed. `--quiet` prints only changes and problems, `--every 30` pings more
+often.
+
+It does **not** keep you logged in forever — the login itself expires roughly
+every 24 hours and only a browser sign-in renews that. What it prevents is the
+session going to sleep between scans.
+
+The one-off equivalent, if you prefer:
 
 ```bash
 curl -sk -X POST https://localhost:5000/v1/api/tickle
@@ -250,7 +271,7 @@ If you ever want the demo data back: delete the local file, or regenerate it wit
 | `competing` session warning | TWS or another gateway holds the connection. |
 | `Server listen failed Address already in use: bind` | A gateway is already running. Do not start a second one — `npm run gateway` will confirm the first is alive. To start clean: `taskkill /IM java.exe /F` (Windows), then launch exactly one. |
 | Login page repeats `Action failed` | Stale cookies from the previous attempt. Log in from a private browser window, and check the Live / Paper toggle matches the account. |
-| `Error 403 - Access Denied` from the API while the browser works | The gateway refuses calls that do not look like they came from its own web UI, and on Windows `localhost` also resolves to IPv6 `::1` while `conf.yaml` allows only `127.0.0.1`. The scripts now send browser headers and retry on the IPv4 address. If it still refuses, run `npm run gateway -- --debug` to see the exact exchange, watch the gateway window for the line explaining the refusal, and add `::1` to `ips.allow` in `root/conf.yaml`. |
+| `Error 403 - Access Denied` from the API | **You are not logged in yet.** This gateway build answers 403 to API calls until a browser session exists, instead of returning `{"authenticated":false}`. Sign in at https://localhost:5000 and the same call works. Verify independently with `curl -k https://localhost:5000/v1/api/iserver/auth/status`. |
 | `404` for `data/stocks.local.json` in the browser console | Normal before your first ingest: the app probes for the local file and falls back to the demo universe. |
 
 ---

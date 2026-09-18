@@ -99,6 +99,7 @@ npm test          # 23 tests: indicator maths and IBKR normalisation
 # 1. start the IBKR Client Portal Gateway and log in at https://localhost:5000
 # 2. list the symbols you care about in config/universe.json
 npm run gateway                 # is it running, logged in, uncontested?
+npm run keepalive               # optional: hold the session open in its own window
 npm run ingest -- --limit 5     # smoke test
 npm run ingest                  # the full list
 ```

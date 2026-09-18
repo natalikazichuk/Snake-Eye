@@ -45,20 +45,16 @@ function portIsOpen() {
 }
 
 /**
- * The gateway rejects calls that do not look like they came from its own web
- * UI: a plain API client gets `Error 403 - Access Denied` while the very same
- * URL opens fine in a browser tab. Sending the headers a browser would send is
- * what gets past it.
+ * Headers the gateway is verified to accept — deliberately close to what curl
+ * sends, since curl demonstrably works against it.
+ *
+ * No Origin and no Referer: supplying them makes the gateway treat the call as
+ * cross-origin and refuse it, and they buy nothing for a local client.
  */
-function browserHeaders(base) {
+function apiHeaders() {
   return {
     Accept: 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
-    Referer: `${base}/`,
-    Origin: base,
-    Connection: 'keep-alive',
+    'User-Agent': 'snake-eye/0.2',
   };
 }
 
@@ -66,7 +62,7 @@ function fetchStatus(base = gateway) {
   const url = new URL('/v1/api/iserver/auth/status', base);
   const transport = url.protocol === 'http:' ? http : https;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
-  const headers = browserHeaders(url.origin);
+  const headers = apiHeaders();
 
   return new Promise((resolve, reject) => {
     const req = transport.request(
@@ -174,18 +170,16 @@ if (!result.json) {
   ];
 
   if (result.status === 403) {
+    lines.length = 0;
     lines.push(
-      '  A 403 from a running gateway is an allow-list rejection, not a missing login.',
-      '  Its conf.yaml permits only 127.0.0.1, and this request did not arrive from it.',
-      '  Check root/conf.yaml:',
+      '✗ Gateway is running, but there is no logged-in session yet',
       '',
-      '    ips:',
-      '      allow:',
-      '        - 127.0.0.1',
+      `  It answers 403 until you log in through the browser: open ${gateway},`,
+      '  accept the self-signed certificate and sign in. The API works from that',
+      '  moment on — this is the gateway\'s way of saying "not authenticated".',
       '',
-      '  Retrying on 127.0.0.1 did not help either, so widen that list (or add ::1)',
-      '  and restart the gateway. Run with --debug to see the exact exchange,',
-      '  and check the gateway window — it logs the reason it refused.',
+      '  Already logged in and still 403? Run with --debug and compare against:',
+      `    curl -k ${gateway}/v1/api/iserver/auth/status`,
     );
   } else {
     lines.push(
