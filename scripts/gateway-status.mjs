@@ -22,6 +22,9 @@ const gateway = process.argv.includes('--gateway')
   ? process.argv[process.argv.indexOf('--gateway') + 1]
   : 'https://localhost:5000';
 
+/** `--debug` prints the exact exchange, so a refusal can be diagnosed from evidence. */
+const DEBUG = process.argv.includes('--debug');
+
 const target = new URL(gateway);
 const PORT = Number(target.port || (target.protocol === 'https:' ? 443 : 80));
 const HOST = target.hostname;
@@ -41,17 +44,36 @@ function portIsOpen() {
   });
 }
 
+/**
+ * The gateway rejects calls that do not look like they came from its own web
+ * UI: a plain API client gets `Error 403 - Access Denied` while the very same
+ * URL opens fine in a browser tab. Sending the headers a browser would send is
+ * what gets past it.
+ */
+function browserHeaders(base) {
+  return {
+    Accept: 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+    Referer: `${base}/`,
+    Origin: base,
+    Connection: 'keep-alive',
+  };
+}
+
 function fetchStatus(base = gateway) {
   const url = new URL('/v1/api/iserver/auth/status', base);
   const transport = url.protocol === 'http:' ? http : https;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  const headers = browserHeaders(url.origin);
 
   return new Promise((resolve, reject) => {
     const req = transport.request(
       url,
       {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers,
         // Local gateway serves a self-signed certificate; never relaxed for a
         // remote host.
         rejectUnauthorized: !(isLocal && url.protocol === 'https:'),
@@ -61,6 +83,13 @@ function fetchStatus(base = gateway) {
         res.setEncoding('utf8');
         res.on('data', (chunk) => { body += chunk; });
         res.on('end', () => {
+          if (DEBUG) {
+            console.log(`\n--- ${url.href}`);
+            console.log('    request headers :', JSON.stringify(headers));
+            console.log(`    response        : HTTP ${res.statusCode}`);
+            console.log('    response headers:', JSON.stringify(res.headers));
+            console.log(`    body            : ${body.slice(0, 300)}\n`);
+          }
           try {
             resolve({ status: res.statusCode, json: JSON.parse(body) });
           } catch {
@@ -155,7 +184,8 @@ if (!result.json) {
       '        - 127.0.0.1',
       '',
       '  Retrying on 127.0.0.1 did not help either, so widen that list (or add ::1)',
-      '  and restart the gateway.',
+      '  and restart the gateway. Run with --debug to see the exact exchange,',
+      '  and check the gateway window — it logs the reason it refused.',
     );
   } else {
     lines.push(
