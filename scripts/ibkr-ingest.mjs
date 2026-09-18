@@ -203,6 +203,28 @@ async function withRetry(label, fn, attempts = 3) {
 
 /* ------------------------------------------------------------- gateway API */
 
+/**
+ * On Windows `localhost` resolves to ::1 first, and the gateway's default
+ * conf.yaml allows only 127.0.0.1 — so a valid request comes back 403 while the
+ * browser, which reaches it over IPv4, works fine. Fall back to the IPv4
+ * loopback rather than reporting a broken gateway.
+ */
+async function resolveGateway(gateway) {
+  try {
+    await request(`${gateway}/v1/api/iserver/auth/status`);
+    return gateway;
+  } catch (error) {
+    const url = new URL(gateway);
+    if (error.status !== 403 || url.hostname !== 'localhost') throw error;
+
+    url.hostname = '127.0.0.1';
+    const ipv4 = url.toString().replace(/\/$/, '');
+    await request(`${ipv4}/v1/api/iserver/auth/status`);
+    console.log(`   note     : localhost was refused (403); using ${ipv4}`);
+    return ipv4;
+  }
+}
+
 async function checkAuth(gateway) {
   const status = await request(`${gateway}/v1/api/iserver/auth/status`);
   if (!status?.authenticated) {
@@ -353,6 +375,7 @@ async function main() {
     return;
   }
 
+  options.gateway = await withRetry('gateway', () => resolveGateway(options.gateway));
   await withRetry('auth', () => checkAuth(options.gateway));
   const accountCount = await initSession(options.gateway);
   console.log(`   auth     : ok${accountCount ? ` (${accountCount} account${accountCount > 1 ? 's' : ''})` : ''}\n`);

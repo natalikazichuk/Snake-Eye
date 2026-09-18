@@ -41,8 +41,8 @@ function portIsOpen() {
   });
 }
 
-function fetchStatus() {
-  const url = new URL('/v1/api/iserver/auth/status', gateway);
+function fetchStatus(base = gateway) {
+  const url = new URL('/v1/api/iserver/auth/status', base);
   const transport = url.protocol === 'http:' ? http : https;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
 
@@ -96,9 +96,35 @@ if (!open) {
   process.exit();
 }
 
+/**
+ * `localhost` resolves to ::1 before 127.0.0.1 on Windows, and the gateway's
+ * default conf.yaml allows only the IPv4 loopback — so it answers a perfectly
+ * valid request with 403. The browser is unaffected because it reaches the
+ * gateway over IPv4. Retrying on 127.0.0.1 is what makes the difference.
+ */
+function ipv4Variant(url) {
+  const parsed = new URL(url);
+  if (parsed.hostname !== 'localhost') return null;
+  parsed.hostname = '127.0.0.1';
+  return parsed.toString().replace(/\/$/, '');
+}
+
 let result;
+let effectiveGateway = gateway;
 try {
   result = await fetchStatus();
+
+  if ((result.status === 403 || !result.json) && ipv4Variant(gateway)) {
+    const ipv4 = ipv4Variant(gateway);
+    const retry = await fetchStatus(ipv4);
+    if (retry.json) {
+      console.log(`ℹ localhost was refused (HTTP ${result.status}); reached the gateway on ${ipv4} instead.`);
+      console.log('  Use that address from now on:  npm run ingest -- --gateway ' + ipv4);
+      console.log('');
+      result = retry;
+      effectiveGateway = ipv4;
+    }
+  }
 } catch (error) {
   report([
     `✗ ${HOST}:${PORT} accepts connections but the API did not answer (${error.message})`,
@@ -112,14 +138,34 @@ try {
 }
 
 if (!result.json) {
-  report([
-    `✗ Something is on ${HOST}:${PORT}, but it is not the Client Portal Gateway`,
+  const lines = [
+    `✗ ${HOST}:${PORT} answered, but not with the gateway API`,
     `  (HTTP ${result.status}, replied: ${result.body || 'no body'})`,
     '',
-    '  On macOS this is usually AirPlay Receiver squatting on port 5000.',
-    '  Move the gateway to another port in root/conf.yaml and re-run with',
-    '  --gateway https://localhost:5001',
-  ], false);
+  ];
+
+  if (result.status === 403) {
+    lines.push(
+      '  A 403 from a running gateway is an allow-list rejection, not a missing login.',
+      '  Its conf.yaml permits only 127.0.0.1, and this request did not arrive from it.',
+      '  Check root/conf.yaml:',
+      '',
+      '    ips:',
+      '      allow:',
+      '        - 127.0.0.1',
+      '',
+      '  Retrying on 127.0.0.1 did not help either, so widen that list (or add ::1)',
+      '  and restart the gateway.',
+    );
+  } else {
+    lines.push(
+      '  On macOS this is usually AirPlay Receiver squatting on port 5000.',
+      '  Move the gateway to another port in root/conf.yaml and re-run with',
+      '  --gateway https://localhost:5001',
+    );
+  }
+
+  report(lines, false);
   process.exit();
 }
 
@@ -146,9 +192,11 @@ if (connected === false) {
 }
 
 report([
-  `✓ Gateway ready at ${gateway}`,
+  `✓ Gateway ready at ${effectiveGateway}`,
   `  authenticated: ${authenticated}   connected: ${connected}   competing: ${Boolean(competing)}`,
   ...notes,
   '',
-  '  Next:  npm run ingest -- --limit 10',
+  effectiveGateway === gateway
+    ? '  Next:  npm run ingest -- --limit 10'
+    : `  Next:  npm run ingest -- --gateway ${effectiveGateway}`,
 ], authenticated && connected !== false);
