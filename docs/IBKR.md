@@ -250,6 +250,7 @@ If you ever want the demo data back: delete the local file, or regenerate it wit
 | `competing` session warning | TWS or another gateway holds the connection. |
 | `Server listen failed Address already in use: bind` | A gateway is already running. Do not start a second one — `npm run gateway` will confirm the first is alive. To start clean: `taskkill /IM java.exe /F` (Windows), then launch exactly one. |
 | Login page repeats `Action failed` | Stale cookies from the previous attempt. Log in from a private browser window, and check the Live / Paper toggle matches the account. |
+| `Error 403 - Access Denied` from the API while the browser works | `localhost` resolves to IPv6 `::1` on Windows, and the gateway's `conf.yaml` allows only `127.0.0.1`. The scripts retry on the IPv4 address automatically; if it still fails, add `::1` to the `ips.allow` list in `root/conf.yaml` and restart. |
 | `404` for `data/stocks.local.json` in the browser console | Normal before your first ingest: the app probes for the local file and falls back to the demo universe. |
 
 ---
