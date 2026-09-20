@@ -228,7 +228,7 @@ sanity check : AAPL last volume 17,828,882
 Compare that with the volume your broker or any quote page shows for the same
 session. If it is 100x off, re-run with `--volume-factor 1`.
 
-### Fundamentals are often missing
+### Fundamentals are often missing — and how to fill them
 
 Without the Refinitiv entitlement the fundamentals request returns nothing. That
 is handled rather than hidden:
@@ -238,8 +238,41 @@ is handled rather than hidden:
 - the Snake Score **drops** the fundamental component and re-weights the rest to
   100 (technical 47%, momentum 29%, volume 24%), so no stock is silently docked
   15 points;
-- the scanner shows a banner saying the fundamental filters cannot match;
+- the scanner shows a banner saying how far the coverage reaches;
 - the stock page says so instead of printing dashes.
+
+**To fill them in for free**, take the numbers from the filings themselves:
+
+```bash
+npm run fundamentals -- --contact you@example.com
+```
+
+SEC EDGAR publishes every filer's reported XBRL facts — no key, no account, no
+subscription. The script reads the file the IBKR ingest wrote, adds revenue,
+EPS, ROE, debt/equity, margins and the current ratio from the latest annual
+filing, computes market cap, P/E and P/S from the price the ingest already has,
+and writes it back. Prices are never touched.
+
+SEC asks automated requests to identify themselves, which is what `--contact`
+is for; the address goes into the User-Agent and nowhere else.
+
+**Coverage is partial by nature.** Only companies that file XBRL with the SEC
+are covered, so foreign private issuers and many ADRs (NIO, GRAB, ABEV, BBD,
+ITUB and friends) come back empty and keep scoring on three components. The run
+prints exactly who was left out and why:
+
+```text
+[  1/ 20] PLUG    7/7 fields  FY 2025-12-31  rev $700M  10-K
+[  2/ 20] NIO    — no CIK
+
+   without fundamentals (1):
+     NIO    not listed in EDGAR (foreign private issuer or ADR)
+```
+
+Figures come from annual filings (10-K, or the 20-F/40-F a foreign issuer files)
+rather than a stitched trailing twelve months: one audited filing is internally
+consistent, while summing four quarters across restatements produces numbers no
+filing ever reported.
 
 ---
 

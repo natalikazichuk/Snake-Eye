@@ -406,10 +406,19 @@ async function initScannerPage() {
     renderSourceInfo(meta, rows.length);
     renderExchangeOptions(meta.exchanges);
 
-    // Fundamental filters silently match nothing when the provider sent no
-    // fundamentals, so say it out loud instead of letting scans come back empty.
-    if (meta.hasFundamentals === false) {
-      qs('#fundamentals-notice')?.removeAttribute('hidden');
+    // Fundamental filters silently match nothing for rows that have no
+    // fundamentals, so say how far the coverage reaches instead of letting
+    // scans come back empty for reasons nobody can see.
+    const notice = qs('#fundamentals-notice');
+    if (notice && meta.fundamentalsCount < rows.length) {
+      notice.textContent = meta.fundamentalsCount === 0
+        ? 'This dataset has no fundamentals — Interactive Brokers only serves them with a Refinitiv entitlement. '
+          + 'The fundamental filters below will match nothing, and the Snake Score is weighted across the technical, '
+          + 'momentum and volume components only. Run `npm run fundamentals` to fill them in from SEC filings.'
+        : `Fundamentals cover ${meta.fundamentalsCount} of ${rows.length} symbols — companies that file XBRL with the SEC. `
+          + 'The rest match no fundamental filter, and their Snake Score is weighted across the technical, momentum '
+          + 'and volume components only.';
+      notice.removeAttribute('hidden');
     }
 
     const presets = await initPresets(form);

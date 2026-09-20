@@ -10,6 +10,7 @@
     "gateway": "node scripts/gateway-status.mjs",
     "keepalive": "node scripts/gateway-keepalive.mjs",
     "ingest": "node scripts/ibkr-ingest.mjs",
+    "fundamentals": "node scripts/sec-ingest.mjs",
     "demo-data": "node scripts/generate-stocks.mjs"
   },
   "license": "MIT"

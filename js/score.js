@@ -135,7 +135,7 @@ export function scoreLabel(total) {
  * ranking, so instead the component is dropped and the remaining weights are
  * re-normalised to 100.
  */
-function hasFundamentals(f) {
+export function hasFundamentals(f) {
   if (!f) return false;
   return ['marketCap', 'revenue', 'eps', 'pe', 'roe', 'revenueGrowth'].some((key) => isNum(f[key]));
 }
