@@ -51,6 +51,7 @@ This is the **MVP** described in the project plan, plus the Stage 2 charts:
 | Saved strategies (presets) | ✅ |
 | Responsive design | ✅ |
 | **Real data from Interactive Brokers** | ✅ personal use, end of day |
+| **Fundamentals from SEC EDGAR** | ✅ free, US filers only |
 | Fundamentals from IBKR | ⚠️ needs a Refinitiv entitlement |
 | Backend, alerts, backtesting | ⏳ later stages |
 
@@ -102,6 +103,7 @@ npm run gateway                 # is it running, logged in, uncontested?
 npm run keepalive               # optional: hold the session open in its own window
 npm run ingest -- --limit 5     # smoke test
 npm run ingest                  # the full list
+npm run fundamentals -- --contact you@example.com   # free fundamentals from SEC filings
 ```
 
 The scanner header then reads `Interactive Brokers · end of day` instead of
@@ -149,8 +151,12 @@ snake-eye/
 ├── scripts/
 │   ├── generate-stocks.mjs demo data generator
 │   ├── ibkr-ingest.mjs     pulls real bars from a local IB Gateway
+│   ├── gateway-status.mjs  one-command gateway diagnosis
+│   ├── gateway-keepalive.mjs  holds the IBKR session open
+│   ├── sec-ingest.mjs      fills fundamentals from SEC EDGAR filings
 │   └── lib/
-│       └── ibkr-normalize.mjs  IBKR payloads -> the app's data shape
+│       ├── ibkr-normalize.mjs  IBKR payloads -> the app's data shape
+│       └── sec-fundamentals.mjs  XBRL facts -> the fundamentals block
 ├── tests/
 │   ├── indicators.test.mjs     indicator maths, edge cases and invariants
 │   └── ibkr-normalize.test.mjs the IBKR mapping, no gateway required

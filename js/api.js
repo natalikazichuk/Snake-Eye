@@ -13,7 +13,7 @@
  */
 
 import { analyze } from './indicators.js';
-import { scoreStock } from './score.js';
+import { hasFundamentals, scoreStock } from './score.js';
 
 /** Resolved against this module's URL, so pages/ and the root both work. */
 const STOCKS_URL = new URL('../data/stocks.json', import.meta.url);
@@ -100,9 +100,13 @@ async function fetchUniverse() {
   const rows = payload.stocks.map((stock) => buildRow(stock, meta));
   rows.sort((a, b) => b.score.total - a.score.total);
 
-  // Fundamental filters and the fundamental sub-score only make sense when the
-  // provider actually supplied fundamentals; IBKR often does not.
-  meta.hasFundamentals = rows.some((row) => row.fundamentals && row.fundamentals.marketCap !== null && row.fundamentals.marketCap !== undefined);
+  // Coverage is routinely partial: IBKR supplies no fundamentals without a
+  // Refinitiv entitlement, and the SEC fill-in reaches only companies that file
+  // XBRL with the SEC — which leaves out foreign private issuers and ADRs. The
+  // UI needs to tell "none" from "some" to say something truthful.
+  const withFundamentals = rows.filter((row) => hasFundamentals(row.fundamentals)).length;
+  meta.fundamentalsCount = withFundamentals;
+  meta.hasFundamentals = withFundamentals > 0;
   meta.provider = meta.provider || (meta.synthetic === false ? 'live' : 'demo');
 
   // The scanner builds its exchange checkboxes from this, so a provider that
