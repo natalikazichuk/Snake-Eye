@@ -12,6 +12,7 @@
  */
 
 import { loadUniverse } from './api.js';
+import { hasFundamentals } from './score.js';
 import {
   DASH,
   direction,
@@ -55,6 +56,15 @@ function renderRows(rows) {
     el('td', { className: 'num col-rvol', text: formatMultiple(row.metrics.relativeVolume) }),
     el('td', { className: 'num col-rsi', text: formatNumber(row.metrics.rsi14, 0) }),
     el('td', { className: 'num col-bars', text: String(row.dates?.length ?? 0) }),
+    el('td', { className: 'center col-fund' }, [
+      hasFundamentals(row.fundamentals)
+        ? el('span', { className: 'fund-mark fund-mark--yes', title: 'Fundamentals available', text: '●' })
+        : el('span', {
+            className: 'fund-mark fund-mark--no',
+            title: 'No fundamentals — scored on three components',
+            text: '○',
+          }),
+    ]),
     el('td', { className: 'num' }, [scorePill(row)]),
   ]));
 }
@@ -74,15 +84,22 @@ function renderSummary(rows, meta) {
     note ? el('span', { className: 'universe-stat__note', text: note }) : null,
   ]);
 
+  // Naming the gap beats counting it: whether a paid fundamentals feed is worth
+  // buying depends on which symbols it would cover, not on how many.
+  const without = rows.filter((row) => !hasFundamentals(row.fundamentals)).map((row) => row.ticker);
+  const fundamentalsNote = withFundamentals === 0
+    ? 'npm run fundamentals'
+    : without.length === 0
+      ? 'all covered'
+      : without.length <= 6
+        ? `missing: ${without.join(' ')}`
+        : `${without.length} without`;
+
   container.replaceChildren(
     card('Symbols', String(rows.length), meta.lastSession ? `to ${meta.lastSession}` : ''),
     card('Up on the session', `${gainers} / ${rows.length}`, ''),
     card('Best score', best ? String(best.score.total) : DASH, best ? best.ticker : ''),
-    card(
-      'With fundamentals',
-      `${withFundamentals} / ${rows.length}`,
-      withFundamentals === 0 ? 'npm run fundamentals' : '',
-    ),
+    card('With fundamentals', `${withFundamentals} / ${rows.length}`, fundamentalsNote),
   );
 }
 

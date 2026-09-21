@@ -95,3 +95,14 @@
   .universe-table .col-volume, .universe-table .col-rvol, .universe-table .col-bars { display: none; }
   .universe-stat__value { font-size: 1.15rem; }
 }
+
+/* Which symbols carry fundamentals, per row — the total alone does not say
+   whether a paid feed would be worth buying. */
+.universe-table .center { text-align: center; }
+.fund-mark { font-size: 0.8rem; }
+.fund-mark--yes { color: #3bf095; }
+.fund-mark--no { color: var(--text-dim); }
+
+@media (max-width: 720px) {
+  .universe-table .col-fund { display: none; }
+}
