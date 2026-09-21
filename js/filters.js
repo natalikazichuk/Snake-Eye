@@ -234,6 +234,38 @@ export function explainNoMatches(rows, criteria) {
     .sort((a, b) => b.excluded - a.excluded);
 }
 
+/**
+ * The rows that came closest, for when nothing matched outright.
+ *
+ * A strategy written for the whole market asks for six or nine things at once,
+ * which is reasonable across thousands of symbols and almost unsatisfiable
+ * across twenty. "Nothing matched" is then true but useless: the reader wants
+ * to know which symbols the strategy nearly liked and what each one is missing.
+ *
+ * Ranked by criteria met, then by score, so the list is the strategy's own
+ * ordering rather than an arbitrary one.
+ */
+export function nearestMisses(rows, criteria, limit = 8) {
+  // Counted the way matchRow tests, not the way the chip row counts: that one
+  // leaves the exchange out and would make "met" come up one short whenever an
+  // exchange was selected.
+  const total = Object.entries(criteria).filter(([key, value]) => {
+    const field = FIELD_BY_KEY.get(key);
+    if (!field) return false;
+    return field.type === 'flag' ? Boolean(value) : true;
+  }).length;
+  if (!total) return [];
+
+  return rows
+    .map((row) => {
+      const { failed } = matchRow(row, criteria);
+      return { row, failed, met: total - failed.length, total };
+    })
+    .filter((entry) => entry.met > 0)
+    .sort((a, b) => b.met - a.met || b.row.score.total - a.row.score.total)
+    .slice(0, limit);
+}
+
 /** Criteria -> URLSearchParams, so a scan can be shared or bookmarked. */
 export function criteriaToQuery(criteria) {
   const params = new URLSearchParams();

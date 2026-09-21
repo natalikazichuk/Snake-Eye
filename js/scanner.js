@@ -15,6 +15,7 @@ import {
   countActiveFilters,
   criteriaFromQuery,
   explainNoMatches,
+  nearestMisses,
   criteriaToQuery,
   describeCriteria,
   emptyCriteria,
@@ -262,6 +263,30 @@ function renderHeader() {
   );
 }
 
+/**
+ * What the strategy nearly liked.
+ *
+ * A saved strategy asks for six to nine conditions at once. Across the whole
+ * market that is a filter; across a personal list of twenty symbols it is
+ * usually unsatisfiable, and "no stocks matched" then hides the fact that four
+ * of them missed by one condition. Showing the near misses, each with what it
+ * is short of, turns a dead end into the answer the strategy was for.
+ */
+function renderNearMisses() {
+  const close = nearestMisses(state.universe, state.criteria, 6);
+  if (!close.length) return null;
+
+  return el('div', { className: 'near-miss' }, [
+    el('p', { className: 'near-miss__title', text: 'Closest to this strategy:' }),
+    el('ul', { className: 'near-miss__list' }, close.map((entry) => el('li', { className: 'near-miss__item' }, [
+      el('a', { className: 'near-miss__ticker', href: stockHref(entry.row.ticker), text: entry.row.ticker }),
+      el('span', { className: 'near-miss__met', text: `${entry.met} of ${entry.total}` }),
+      el('span', { className: 'near-miss__short', text: `short of ${entry.failed.join(', ')}` }),
+      el('span', { className: `near-miss__score tone-${entry.row.score.tone}`, text: String(entry.row.score.total) }),
+    ]))),
+  ]);
+}
+
 function renderResults() {
   const body = qs('#results-body');
   const rows = visibleRows();
@@ -300,6 +325,7 @@ function renderResults() {
               ? 'No ticker matches that search — clear the search box to see the full result set.'
               : 'Loosen the filter above, or press Reset filters to see the whole universe.',
           }),
+          searching ? null : renderNearMisses(),
         ]),
       ]),
     );

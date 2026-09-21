@@ -294,6 +294,27 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
 
 /* -------------------------------------------------------------- fragments */
 
+/*
+ * Score badge. Lives here rather than with the landing page because two pages
+ * now show one, and a second copy would drift from the first.
+ */
+.score-pill {
+  display: inline-block;
+  min-width: 2.4rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(59, 240, 149, 0.12);
+  color: #3bf095;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.score-pill.tone-neutral { background: rgba(214, 168, 30, 0.14); color: var(--warn); }
+.score-pill.tone-weak { background: rgba(255, 154, 90, 0.14); color: #ff9a5a; }
+.score-pill.tone-bad { background: rgba(224, 82, 104, 0.14); color: var(--down); }
+
 .tag {
   display: inline-block;
   padding: 0.12rem 0.5rem;
