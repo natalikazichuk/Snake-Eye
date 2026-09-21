@@ -469,3 +469,7 @@ body::before {
 @media print {
   body::before { display: none; }
 }
+
+/* A week-old end-of-day file is still usable, but the reader should not have
+   to work that out from a date. */
+[data-source-stamp].is-stale { color: var(--warn); }
