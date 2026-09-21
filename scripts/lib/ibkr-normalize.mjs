@@ -146,6 +146,65 @@ function toSessionDate(value) {
 const round = (value) => Math.round(value * 10000) / 10000;
 
 /**
+ * IBKR reports large numbers as formatted strings: "740.2M", "1.2B", "3.4T".
+ * Parsing them by hand is the difference between a market cap of 740 million
+ * and one of 740.
+ */
+export function parseIbkrNumber(value) {
+  if (isNum(value)) return value;
+  if (typeof value !== 'string') return null;
+
+  const text = value.trim().replace(/,/g, '');
+  if (!text || text === '-' || text.toUpperCase() === 'N/A') return null;
+
+  const match = text.match(/^(-?\d*\.?\d+)\s*([KMBT])?$/i);
+  if (!match) return null;
+
+  const scale = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 }[(match[2] || '').toUpperCase()] || 1;
+  return Number(match[1]) * scale;
+}
+
+/**
+ * Market data snapshot fields that carry fundamentals.
+ *
+ * The snapshot endpoint is the one place this data appears without a Refinitiv
+ * entitlement, so it is worth asking for even when the fundamentals endpoints
+ * answer.
+ */
+export const SNAPSHOT_FIELDS = {
+  7289: 'marketCap',
+  7290: 'pe',
+  7291: 'eps',
+  7287: 'dividendYield',
+  7283: 'avgVolume90d',
+  7281: 'industry',
+  7282: 'category',
+};
+
+/** One snapshot row (keys are field numbers) -> the app's field names. */
+export function normalizeSnapshot(row) {
+  if (!row || typeof row !== 'object') return {};
+
+  const out = {};
+  for (const [field, name] of Object.entries(SNAPSHOT_FIELDS)) {
+    const raw = row[field];
+    if (raw === undefined || raw === null || raw === '') continue;
+
+    if (name === 'industry' || name === 'category') {
+      out[name] = String(raw);
+      continue;
+    }
+    const parsed = parseIbkrNumber(raw);
+    if (parsed !== null) out[name] = parsed;
+  }
+
+  // A negative or zero P/E is IBKR's way of saying the company has no earnings
+  // to divide by; the app expects null for that rather than a misleading ratio.
+  if (isNum(out.pe) && out.pe <= 0) out.pe = null;
+  return out;
+}
+
+/**
  * Map IBKR fundamentals onto the app's field names.
  *
  * Fundamentals need a Refinitiv entitlement and the payload varies by gateway
@@ -156,11 +215,8 @@ export function normalizeFundamentals(payload) {
   if (!payload || typeof payload !== 'object') return {};
   const pick = (...keys) => {
     for (const key of keys) {
-      const value = payload[key];
-      if (isNum(value)) return value;
-      if (typeof value === 'string' && value.trim() !== '' && isNum(Number(value))) {
-        return Number(value);
-      }
+      const parsed = parseIbkrNumber(payload[key]);
+      if (parsed !== null) return parsed;
     }
     return null;
   };
