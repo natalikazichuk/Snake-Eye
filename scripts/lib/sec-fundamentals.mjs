@@ -140,7 +140,12 @@ export function buildFundamentals(companyfacts, { price = null } = {}) {
 
   const revenueValue = valueOf(revenue);
   const epsValue = valueOf(eps);
-  const marketCap = ratio(price, 1) !== null && isNum(shares) ? price * shares : null;
+  // Rounded to whole dollars: price * shares lands on values like
+  // 1880999999.9999998, and a market cap carrying eight decimal places of
+  // binary-float noise reads as false precision wherever it is printed.
+  const marketCap = ratio(price, 1) !== null && isNum(shares)
+    ? Math.round(price * shares)
+    : null;
 
   return {
     marketCap,
