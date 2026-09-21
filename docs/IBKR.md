@@ -266,6 +266,24 @@ rather than the nominal 40/25/20.
 
 `--json` prints the same thing machine-readably, for piping somewhere else.
 
+### When a ticker resolves to the wrong thing
+
+`npm run ticker` prints the contract it chose before it asks for anything:
+
+```
+  SMC → SUMMIT MIDSTREAM CORP · NYSE · conid 717988177
+```
+
+Read that line. A ticker can name more than one instrument: **SMC** is Summit
+Midstream on NYSE *and* an S&P SmallCap futures index on CME, and the search
+ranks the index first. Asking for a stock's price history against an index
+conid comes back `HTTP 500` with nothing to say why.
+
+The picker now drops contracts on venues that never list cash equities (CME,
+CBOT, NYMEX, COMEX, CFE, ICEUS) and prefers a US listing over a foreign one.
+If the printed line still names the wrong instrument, `--debug` shows every
+contract the search returned.
+
 ### Fundamentals
 
 IBKR serves these from two places, and the ingest asks both:

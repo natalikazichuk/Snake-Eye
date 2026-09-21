@@ -251,6 +251,11 @@ async function main() {
     throw new Error(`No US stock contract for ${options.symbol}. Check the ticker, or try --debug.`);
   }
 
+  // Printed before the history request, not after: a ticker can collide with a
+  // futures or index contract of the same letters, and seeing which one was
+  // chosen turns an opaque HTTP 500 into an obvious wrong pick.
+  console.log(dim(`  ${contract.ticker} → ${contract.name} · ${contract.exchange || 'exchange unknown'} · conid ${contract.conid}`));
+
   const raw = await withRetry(`history ${options.symbol}`, () =>
     fetchHistory(options.gateway, contract.conid, options));
   const history = normalizeHistory(raw, { volumeFactor: options.volumeFactor });
@@ -313,8 +318,15 @@ async function main() {
 
 main().catch((error) => {
   console.error(`\n✗ ${error.message}`);
+  if (error.body) console.error(`  gateway said: ${error.body}`);
+
   if (error.status === 403) {
     console.error('  403 — the gateway is running but not logged in. Open https://localhost:5000.');
+  } else if (error.status === 500) {
+    console.error('  A 500 on the history endpoint usually means the contract is not a US cash');
+    console.error('  equity — a futures or index contract can share a ticker with a stock. Check');
+    console.error('  the line above: is that the company you meant? Re-run with --debug to see');
+    console.error('  every contract the search returned.');
   } else if (error.code === 'ECONNREFUSED') {
     console.error('  Nothing is listening there — start the gateway, then npm run gateway.');
   }

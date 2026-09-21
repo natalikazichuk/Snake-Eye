@@ -40,10 +40,19 @@ export function pickContract(rows, symbol) {
   });
   if (!candidates.length) return null;
 
+  // Venues that never list a cash equity. A ticker can collide with a futures
+  // or index contract carrying the same letters - SMC is both Summit Midstream
+  // on NYSE and an S&P SmallCap futures index on CME - and the index often
+  // ranks first. Taking it produces a conid whose price history the gateway
+  // answers with HTTP 500.
+  const derivativeVenues = ['CME', 'CBOT', 'NYMEX', 'COMEX', 'CFE', 'ICEUS', 'SMFE', 'GLOBEX'];
+  const equities = candidates.filter((row) => !derivativeVenues.includes(exchangeOf(row)));
+  const pool = equities.length ? equities : candidates;
+
   // Prefer a US listing, then the first match the API ranked highest.
   const usExchanges = ['NASDAQ', 'NYSE', 'ARCA', 'BATS', 'AMEX', 'NYSEMKT', 'PINK'];
   const preferred =
-    candidates.find((row) => usExchanges.includes(exchangeOf(row))) || candidates[0];
+    pool.find((row) => usExchanges.includes(exchangeOf(row))) || pool[0];
 
   const conid = preferred.conid ?? preferred.underlying_contract_id;
   if (!isNum(Number(conid))) return null;
@@ -56,11 +65,26 @@ export function pickContract(rows, symbol) {
   };
 }
 
+/**
+ * Pull the exchange out of whichever shape this gateway build answers in.
+ *
+ * Builds differ in where they put it: a dedicated field, a trailing `- NYSE`,
+ * or - as the Client Portal build does - parenthesised inside the company
+ * header, `SUMMIT MIDSTREAM CORP (NYSE)`. Missing the parenthesised form made
+ * this return null for every row, which silently disabled the US-listing
+ * preference in pickContract and left it taking whatever the search ranked
+ * first. For SMC that is an S&P SmallCap futures index on CME, and asking for
+ * a stock's price history against an index conid returns HTTP 500.
+ */
 function exchangeOf(row) {
-  // CP Web API puts the exchange in `description`; the MCP shape uses `exchange`.
   const direct = row.exchange || row.listingExchange || row.description;
   if (direct && !String(direct).includes(' ')) return cleanExchange(direct);
-  const header = String(row.companyHeader || '');
+
+  const header = String(row.companyHeader || row.description || '');
+
+  const parens = header.match(/\(([^()]+)\)\s*$/);
+  if (parens) return cleanExchange(parens[1]);
+
   const dash = header.lastIndexOf(' - ');
   return dash === -1 ? null : cleanExchange(header.slice(dash + 3));
 }
@@ -74,8 +98,12 @@ function cleanExchange(value) {
 function nameOf(row) {
   if (row.companyName) return row.companyName;
   const header = String(row.companyHeader || row.description || '');
-  const dash = header.lastIndexOf(' - ');
-  return (dash === -1 ? header : header.slice(0, dash)).trim() || row.symbol;
+
+  // Strip the exchange the header carries, however it is attached, so the name
+  // is a company name rather than "BLINK CHARGING CO (NASDAQ)".
+  const withoutParens = header.replace(/\s*\([^()]+\)\s*$/, '');
+  const dash = withoutParens.lastIndexOf(' - ');
+  return (dash === -1 ? withoutParens : withoutParens.slice(0, dash)).trim() || row.symbol;
 }
 
 /**

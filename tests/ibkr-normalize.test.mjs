@@ -259,3 +259,44 @@ test('builds a record and payload in the shape the frontend loads', () => {
   assert.equal(payload.stocks[0].ticker, 'AAPL');
   assert.equal(payload.stocks[0].history.close.length, payload.stocks[0].history.dates.length);
 });
+
+test('the exchange is read from a parenthesised company header', () => {
+  // The Client Portal build answers "NAME (EXCHANGE)". Reading only the
+  // " - NYSE" form returned null for every row, which silently disabled the
+  // US-listing preference below.
+  const picked = pickContract(
+    [{ conid: 287428879, symbol: 'BLNK', companyHeader: 'BLINK CHARGING CO (NASDAQ)' }],
+    'BLNK',
+  );
+  assert.equal(picked.exchange, 'NASDAQ');
+  assert.equal(picked.name, 'BLINK CHARGING CO', 'the exchange is not part of the name');
+});
+
+test('a futures index is not mistaken for the stock of the same ticker', () => {
+  // SMC is both an S&P SmallCap futures index on CME and Summit Midstream on
+  // NYSE, and the index ranks first. Picking it produced a conid whose price
+  // history the gateway answered with HTTP 500.
+  const picked = pickContract([
+    { conid: 16503337, symbol: 'SMC', companyHeader: 'E-Mini S&P SmallCap 600 Futures (CME)' },
+    { conid: 717988177, symbol: 'SMC', companyHeader: 'SUMMIT MIDSTREAM CORP (NYSE)' },
+  ], 'SMC');
+  assert.equal(picked.conid, 717988177);
+  assert.equal(picked.exchange, 'NYSE');
+});
+
+test('a foreign listing loses to the US one whatever the order', () => {
+  const picked = pickContract([
+    { conid: 1, symbol: 'PLUG', companyHeader: 'PLUG POWER INC (MEXI)' },
+    { conid: 2, symbol: 'PLUG', companyHeader: 'PLUG POWER INC (NASDAQ)' },
+  ], 'PLUG');
+  assert.equal(picked.conid, 2);
+});
+
+test('the " - EXCHANGE" header form still works', () => {
+  const picked = pickContract(
+    [{ conid: 9, symbol: 'AAPL', companyHeader: 'APPLE INC - NASDAQ' }],
+    'AAPL',
+  );
+  assert.equal(picked.exchange, 'NASDAQ');
+  assert.equal(picked.name, 'APPLE INC');
+});
