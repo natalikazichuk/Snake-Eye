@@ -57,11 +57,22 @@ function sessionDates(lastSession, count) {
  * Turn a raw record into the row every other module consumes:
  * identity + fundamentals + computed indicator snapshot + Snake Score.
  */
+/**
+ * Older ingests stored the gateway's company header verbatim, exchange and
+ * all: "CHARGEPOINT HOLDINGS INC (NYSE)". The ingest strips that now, but a
+ * data file already on disk still carries it, and re-pulling twenty symbols to
+ * fix a label is a poor trade against the pacing budget.
+ */
+function cleanName(name, ticker) {
+  if (typeof name !== 'string') return ticker;
+  return name.replace(/\s*\((?:NASDAQ|NYSE|ARCA|BATS|AMEX|NYSEMKT|PINK|ADR[^()]*)\)\s*$/i, '').trim() || ticker;
+}
+
 function buildRow(stock, meta) {
   const metrics = analyze(stock.history);
   const row = {
     ticker: stock.ticker,
-    name: stock.name,
+    name: cleanName(stock.name, stock.ticker),
     exchange: (stock.exchange || 'UNKNOWN').toUpperCase(),
     sector: stock.sector,
     currency: stock.currency || 'USD',
