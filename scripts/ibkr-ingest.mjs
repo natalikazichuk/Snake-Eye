@@ -37,10 +37,12 @@ import http from 'node:http';
 import {
   FULL_BARS,
   MIN_BARS,
+  SNAPSHOT_FIELDS,
   buildPayload,
   buildStockRecord,
   normalizeFundamentals,
   normalizeHistory,
+  normalizeSnapshot,
   pickContract,
 } from './lib/ibkr-normalize.mjs';
 
@@ -345,24 +347,83 @@ async function lookupExchange(gateway, symbol) {
 }
 
 /**
- * Fundamentals live behind a Refinitiv entitlement and the endpoint has moved
- * between gateway versions, so several paths are tried and failure is not
- * fatal: the app simply scores without the fundamental component.
+ * Market cap, P/E and EPS ride along with the market data snapshot, which every
+ * account can request — no Refinitiv entitlement involved.
+ *
+ * The snapshot endpoint needs asking twice: the first call only opens the
+ * subscription and comes back with the field list unpopulated, the second
+ * carries the values.
  */
-async function fetchFundamentals(gateway, conid) {
+async function fetchSnapshot(gateway, conid) {
+  const fields = Object.keys(SNAPSHOT_FIELDS).join(',');
+  const url = `${gateway}/v1/api/iserver/marketdata/snapshot?conids=${conid}&fields=${fields}`;
+
+  try {
+    await request(url, { timeout: 15000 });
+  } catch {
+    return { data: {}, raw: null };
+  }
+
+  await sleep(1500);
+  const rows = await request(url, { timeout: 15000 });
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  return { data: normalizeSnapshot(row), raw: row };
+}
+
+/**
+ * The deeper figures — revenue, margins, ROE, debt/equity — come from the
+ * Refinitiv fundamentals, which IBKR exposes on a path that has moved between
+ * gateway versions. Each candidate is tried in turn and failure is not fatal.
+ */
+async function fetchRefinitiv(gateway, conid) {
   const paths = [
     `/v1/api/iserver/fundamentals/${conid}/summary`,
     `/v1/api/fundamentals/landing/${conid}`,
+    `/v1/api/fundamentals/summary/${conid}`,
+    `/v1/api/iserver/fundamentals/${conid}/financials`,
   ];
+
   for (const path of paths) {
     try {
-      const payload = await request(`${gateway}${path}`, { timeout: 15000 });
-      if (payload && typeof payload === 'object') return normalizeFundamentals(payload.ratios || payload);
+      const payload = await request(`${gateway}${path}`, { timeout: 20000 });
+      if (!payload || typeof payload !== 'object') continue;
+
+      const source = payload.ratios || payload.summary || payload;
+      const mapped = normalizeFundamentals(source);
+      if (Object.values(mapped).some((value) => value !== null)) {
+        return { data: mapped, raw: payload, path };
+      }
     } catch {
       /* try the next path */
     }
   }
-  return {};
+  return { data: {}, raw: null, path: null };
+}
+
+/**
+ * Everything the account can tell us about a company's fundamentals.
+ *
+ * Refinitiv supplies the richer set and wins where both answer; the snapshot
+ * fills what is left, which on an account without that entitlement is still
+ * market cap, P/E and EPS.
+ */
+async function fetchFundamentals(gateway, conid, { debug = false } = {}) {
+  const [refinitiv, snapshot] = [await fetchRefinitiv(gateway, conid), await fetchSnapshot(gateway, conid)];
+
+  const merged = { ...snapshot.data };
+  for (const [key, value] of Object.entries(refinitiv.data)) {
+    if (value !== null && value !== undefined) merged[key] = value;
+  }
+
+  if (debug) {
+    console.log(`      fundamentals for ${conid}:`);
+    console.log(`        refinitiv path : ${refinitiv.path || 'none answered'}`);
+    console.log(`        refinitiv raw  : ${JSON.stringify(refinitiv.raw).slice(0, 400)}`);
+    console.log(`        snapshot raw   : ${JSON.stringify(snapshot.raw).slice(0, 400)}`);
+    console.log(`        merged         : ${JSON.stringify(merged)}`);
+  }
+
+  return merged;
 }
 
 /* -------------------------------------------------------------------- run */
@@ -439,7 +500,7 @@ async function main() {
       let fundamentals = {};
       if (options.fundamentals) {
         await pace();
-        fundamentals = await fetchFundamentals(options.gateway, contract.conid);
+        fundamentals = await fetchFundamentals(options.gateway, contract.conid, { debug: options.debug });
       }
 
       stocks.push(buildStockRecord({ contract, history, fundamentals }));
@@ -470,11 +531,16 @@ async function main() {
   await writeFile(outPath, `${JSON.stringify(payload)}\n`);
 
   const withFundamentals = stocks.filter((s) => Object.values(s.fundamentals).some((v) => v !== null && v !== undefined)).length;
+  const withRatios = stocks.filter((s) => s.fundamentals.revenue !== null && s.fundamentals.revenue !== undefined).length;
   const sampleVolume = stocks[0].history.volume.at(-1);
 
   console.log(`\n✓ ${stocks.length} symbols written to ${options.out}`);
   console.log(`   sessions      : ${payload.meta.firstSession} → ${payload.meta.lastSession}`);
-  console.log(`   fundamentals  : ${withFundamentals}/${stocks.length} symbols`);
+  console.log(`   fundamentals  : ${withFundamentals}/${stocks.length} symbols (${withRatios} with revenue and margins)`);
+  if (options.fundamentals && withFundamentals === 0) {
+    console.log('                   none came back — re-run with --debug to see what the');
+    console.log('                   gateway answers, or fill them from SEC: npm run fundamentals');
+  }
   console.log(`   sanity check  : ${stocks[0].ticker} last volume ${sampleVolume.toLocaleString('en-US')}`);
   console.log(`                   if that is 100x off, re-run with --volume-factor ${options.volumeFactor === 100 ? 1 : 100}`);
   const unknownVenue = stocks.filter((stock) => !stock.exchange || stock.exchange === 'UNKNOWN');

@@ -228,10 +228,24 @@ sanity check : AAPL last volume 17,828,882
 Compare that with the volume your broker or any quote page shows for the same
 session. If it is 100x off, re-run with `--volume-factor 1`.
 
-### Fundamentals are often missing — and how to fill them
+### Fundamentals
 
-Without the Refinitiv entitlement the fundamentals request returns nothing. That
-is handled rather than hidden:
+IBKR serves these from two places, and the ingest asks both:
+
+| Source | Fields | Needs |
+|---|---|---|
+| Market data snapshot | market cap, P/E, EPS, dividend yield, industry | nothing beyond your market data subscription |
+| Refinitiv fundamentals | revenue, growth, margins, ROE, debt/equity, current ratio | the Refinitiv/LSEG entitlement — **free for IBKR clients**, but it has to be switched on |
+
+If the run reports `fundamentals : 0/20`, the entitlement is not active on the
+account yet. Turn it on in Client Portal under **Settings → Account Settings →
+Market Data Subscriptions**, look for *Reuters/Refinitiv Worldwide
+Fundamentals*, and re-run. Activation is not always instant.
+
+`--debug` prints which path answered and the raw payload, which is the quickest
+way to tell "not entitled" from "answered in a shape the script does not read".
+
+When nothing comes back at all, this is handled rather than hidden:
 
 - fundamental fields stay `null` (never `0` — "no data" and "zero revenue" are
   different claims);

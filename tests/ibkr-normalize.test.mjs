@@ -16,6 +16,8 @@ import {
   buildStockRecord,
   normalizeFundamentals,
   normalizeHistory,
+  normalizeSnapshot,
+  parseIbkrNumber,
   pickContract,
 } from '../scripts/lib/ibkr-normalize.mjs';
 
@@ -162,6 +164,55 @@ test('missing fundamentals stay null rather than becoming zero', () => {
 
 test('an empty fundamentals response does not throw', () => {
   assert.deepEqual(normalizeFundamentals(null), {});
+});
+
+/* -------------------------------------------------------------- snapshot */
+
+test('parses the suffixed numbers IBKR sends for large values', () => {
+  // Reading "740.2M" as 740.2 would understate a market cap by six orders of
+  // magnitude and quietly pass every market-cap filter.
+  assert.equal(parseIbkrNumber('740.2M'), 740_200_000);
+  assert.equal(parseIbkrNumber('1.2B'), 1_200_000_000);
+  assert.equal(parseIbkrNumber('3.4T'), 3_400_000_000_000);
+  assert.equal(parseIbkrNumber('12.34'), 12.34);
+  assert.equal(parseIbkrNumber('1,234'), 1234);
+  assert.equal(parseIbkrNumber(56.7), 56.7);
+});
+
+test('treats IBKR\'s empty markers as no data', () => {
+  for (const empty of ['-', 'N/A', '', '   ', null, undefined, 'n/a']) {
+    assert.equal(parseIbkrNumber(empty), null, `${JSON.stringify(empty)} must be null`);
+  }
+});
+
+test('maps snapshot field numbers onto the app\'s fields', () => {
+  const snapshot = normalizeSnapshot({
+    conid: 265598, '7289': '3.4T', '7290': '34.1', '7291': '6.42', '7287': '0.4', '7281': 'Technology',
+  });
+  assert.equal(snapshot.marketCap, 3.4e12);
+  assert.equal(snapshot.pe, 34.1);
+  assert.equal(snapshot.eps, 6.42);
+  assert.equal(snapshot.industry, 'Technology');
+});
+
+test('a non-positive P/E from the snapshot becomes null', () => {
+  // IBKR reports a loss-making company's P/E as a negative number; the app's
+  // "P/E below X" filter must not match it.
+  const snapshot = normalizeSnapshot({ '7290': '-4.2', '7291': '-0.35' });
+  assert.equal(snapshot.pe, null);
+  assert.equal(snapshot.eps, -0.35, 'the loss itself is still reported');
+});
+
+test('an unpopulated snapshot yields nothing rather than zeros', () => {
+  assert.deepEqual(normalizeSnapshot({ conid: 1, '_updated': 123 }), {});
+  assert.deepEqual(normalizeSnapshot(null), {});
+});
+
+test('ratio codes accept the suffixed strings too', () => {
+  const f = normalizeFundamentals({ MKTCAP: '740.2M', TTMREV: '1.2B', TTMREVCHG: '12.5' });
+  assert.equal(f.marketCap, 740_200_000);
+  assert.equal(f.revenue, 1_200_000_000);
+  assert.equal(f.revenueGrowth, 0.125);
 });
 
 /* --------------------------------------------------------------- payload */
