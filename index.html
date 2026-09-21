@@ -10,6 +10,26 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <!--
+    Opened from the file system, every module script here is blocked by the
+    browser's origin rules: no JavaScript runs at all, so nothing on the page
+    can report the problem. This one inline classic script is the exception -
+    it is not fetched, so it survives to say what went wrong.
+  -->
+  <script>
+    if (location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function () {
+        var box = document.createElement('div');
+        box.className = 'file-protocol-warning';
+        box.innerHTML =
+          '<strong>Snake Eye is running from the file system, so the browser has blocked its scripts.</strong>'
+          + '<p>Nothing on this page will load or update. Serve the folder over HTTP instead:</p>'
+          + '<pre>npm run serve</pre>'
+          + '<p>then open <a href="http://localhost:8080">http://localhost:8080</a>.</p>';
+        document.body.insertBefore(box, document.body.firstChild);
+      });
+    }
+  </script>
   <script type="module" src="js/app.js"></script>
 </head>
 <body data-page="home">

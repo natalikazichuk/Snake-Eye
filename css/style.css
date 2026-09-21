@@ -376,3 +376,33 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
 .empty-state { padding: 3rem 1rem; text-align: center; color: var(--text-dim); }
 .empty-state__eye { font-size: 2.4rem; margin: 0 0 0.5rem; }
 .empty-state__hint { max-width: 46ch; margin-inline: auto; margin-bottom: 1.5rem; }
+
+/*
+ * Shown only when the page was opened over file://, where the browser blocks
+ * every module script and the app cannot report its own failure. Styled from
+ * first principles rather than the design tokens above: if the stylesheet
+ * itself fails to load, the markup is still readable on its own.
+ */
+.file-protocol-warning {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  background: #4a1d1d;
+  border-bottom: 2px solid #e05252;
+  color: #ffe9e9;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.file-protocol-warning p { margin: 0.5rem 0; }
+
+.file-protocol-warning pre {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  background: #2a0f0f;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.file-protocol-warning a { color: #ffb4b4; }
