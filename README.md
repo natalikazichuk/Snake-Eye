@@ -106,7 +106,11 @@ npm run ingest                  # the full list
 npm run fundamentals -- --contact you@example.com   # free fundamentals from SEC filings
 npm run ticker -- PLUG          # one symbol on demand, with its score breakdown
 npm run universe                # show the scan list; --add/--remove/--from-portfolio edit it
+npm start                       # serve the site at http://localhost:8080
 ```
+
+Which windows to open, in what order, and what each message means:
+[docs/DAILY.md](docs/DAILY.md).
 
 The scanner header then reads `Interactive Brokers · end of day` instead of
 `demo data`. Setup, pacing limits, the volume-in-lots trap and troubleshooting are all
