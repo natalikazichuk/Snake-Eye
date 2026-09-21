@@ -105,6 +105,7 @@ npm run ingest -- --limit 5     # smoke test
 npm run ingest                  # the full list
 npm run fundamentals -- --contact you@example.com   # free fundamentals from SEC filings
 npm run ticker -- PLUG          # one symbol on demand, with its score breakdown
+npm run universe                # show the scan list; --add/--remove/--from-portfolio edit it
 ```
 
 The scanner header then reads `Interactive Brokers · end of day` instead of

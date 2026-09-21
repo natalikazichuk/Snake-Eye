@@ -371,3 +371,51 @@ export async function fetchFundamentals(gateway, conid, { debug = false } = {}) 
 }
 
 /* -------------------------------------------------------------------- run */
+
+/* ----------------------------------------------------------------- account */
+
+/** The accounts this gateway session can see. */
+export async function fetchAccounts(gateway) {
+  const rows = await request(`${gateway}/v1/api/portfolio/accounts`, { timeout: 15000 });
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => ({ id: row.accountId || row.id, title: row.accountTitle || row.displayName || '' }))
+    .filter((account) => account.id);
+}
+
+/**
+ * Stock positions currently held, as plain tickers.
+ *
+ * Options, futures and cash lines are dropped: the scanner scores equities, and
+ * a list seeded from a portfolio should not arrive carrying instruments the
+ * rest of the pipeline cannot price.
+ */
+export async function fetchPositions(gateway, accountId) {
+  const symbols = new Map();
+
+  // The endpoint pages; anything beyond a few hundred positions is not a
+  // personal account, so a handful of pages is plenty.
+  for (let page = 0; page < 5; page += 1) {
+    let rows;
+    try {
+      rows = await request(`${gateway}/v1/api/portfolio/${accountId}/positions/${page}`, { timeout: 20000 });
+    } catch {
+      break;
+    }
+    if (!Array.isArray(rows) || !rows.length) break;
+
+    for (const row of rows) {
+      const assetClass = String(row.assetClass || row.secType || '').toUpperCase();
+      if (assetClass && assetClass !== 'STK') continue;
+      if (Number(row.position) === 0) continue;
+
+      const ticker = String(row.ticker || row.contractDesc || '').trim().toUpperCase().split(' ')[0];
+      if (/^[A-Z][A-Z.]{0,5}$/.test(ticker)) {
+        symbols.set(ticker, { ticker, position: Number(row.position) || 0, conid: row.conid });
+      }
+    }
+    if (rows.length < 30) break;
+  }
+
+  return [...symbols.values()];
+}
