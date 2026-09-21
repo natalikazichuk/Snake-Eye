@@ -228,6 +228,44 @@ sanity check : AAPL last volume 17,828,882
 Compare that with the volume your broker or any quote page shows for the same
 session. If it is 100x off, re-run with `--volume-factor 1`.
 
+### One symbol, on demand
+
+Re-running the whole universe to look at a single ticker is a poor trade — it
+spends twenty historical requests against a 60-per-10-minutes budget to answer
+a question about one of them. So:
+
+```bash
+npm run ticker -- PLUG
+```
+
+It resolves the contract, pulls the history, scores it, prints the breakdown,
+and merges the symbol into `data/stocks.local.json` — so the ticker then shows
+up in the scanner alongside the universe, whether or not it is in
+`config/universe.json`. Pass `--no-save` to look without touching the file.
+
+The score is computed by importing the browser's own `analyze()` and
+`scoreStock()` rather than reimplementing them in the script. There is only one
+scoring implementation in this project, so the number the terminal prints is
+the number the page shows — not two that happen to agree today.
+
+The breakdown is the same one the stock page draws, in text:
+
+```
+  SNAKE SCORE    55 / 100   Watching
+
+  technical    ███████████████░░░░░  75  weight 47%
+      ○ Price > SMA20                        0 / 15
+      ● Price > SMA50                       20 / 20
+      ● ADX trend strength                  15 / 15  58
+      ...
+```
+
+`●` full marks, `◐` partial, `○` nothing. The weights shown are the effective
+ones after re-normalisation, so a symbol with no fundamentals reads 47/29/24
+rather than the nominal 40/25/20.
+
+`--json` prints the same thing machine-readably, for piping somewhere else.
+
 ### Fundamentals
 
 IBKR serves these from two places, and the ingest asks both:
