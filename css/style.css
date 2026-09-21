@@ -406,3 +406,45 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
 }
 
 .file-protocol-warning a { color: #ffb4b4; }
+
+/* ---------------------------------------------------------------- watermark */
+
+/*
+ * The snake mark sits behind every page, fixed so it does not travel with the
+ * content. Kept faint on purpose: at this opacity it reads as texture under a
+ * table of numbers rather than as a picture competing with them, and it never
+ * intercepts a click.
+ *
+ * The URL resolves against this stylesheet, so one rule covers the root page
+ * and pages/ alike.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  /*
+   * A PNG built for a 180px logo is 49KB; at 4.5% opacity none of that detail
+   * survives, so a WebP of the same silhouette carries it instead. The plain
+   * url() stays as the fallback for anything that cannot read image-set.
+   */
+  background-image: url('../assets/images/logo/snake-eye-watermark.webp');
+  background-image: image-set(
+    url('../assets/images/logo/snake-eye-watermark.webp') type('image/webp'),
+    url('../assets/images/logo/snake-eye-mark.png') type('image/png')
+  );
+  background-repeat: no-repeat;
+  background-position: center 58%;
+  background-size: min(620px, 62vw);
+  opacity: 0.045;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  body::before { background-size: min(420px, 82vw); opacity: 0.035; }
+}
+
+/* Printing a watermark wastes ink and helps nobody. */
+@media print {
+  body::before { display: none; }
+}

@@ -2,16 +2,24 @@
    Snake Eye — landing page (index.html)
    ========================================================================== */
 
+/*
+ * A masthead, not a billboard. The scanner is the page: the title bar earns a
+ * couple of rows, and the matches start above the fold rather than below a
+ * screenful of artwork.
+ */
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  padding: 3.5rem 0 1rem;
+  gap: 1rem 1.25rem;
+  padding: 1.5rem 0 1.25rem;
 }
 
+.hero__copy { flex: 1 1 16rem; }
+.hero__actions { margin-left: auto; }
+
 .hero__eyebrow {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.2rem;
   color: var(--accent);
   font-family: var(--mono);
   font-size: 0.8rem;
@@ -21,7 +29,7 @@
 
 .hero__title {
   margin: 0;
-  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
   letter-spacing: 0.02em;
 }
 
@@ -41,7 +49,7 @@
 }
 
 .hero__slogan {
-  margin: 0.6rem 0 1.2rem;
+  margin: 0.2rem 0 0;
   color: var(--accent);
   font-size: 1.15rem;
   font-weight: 600;
@@ -49,7 +57,7 @@
 }
 
 .hero__lead { color: var(--text-soft); max-width: 56ch; font-size: 1.02rem; }
-.hero__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.75rem; }
+.hero__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .hero__panel { box-shadow: var(--shadow); }
 
 .highlights { display: flex; flex-direction: column; gap: 0.15rem; }
@@ -153,12 +161,11 @@
 
 .hero__logo {
   display: block;
-  width: min(300px, 58%);
+  width: 72px;
   height: auto;
-  margin-bottom: 1.25rem;
-  border-radius: 18px;
+  border-radius: 12px;
   /* the artwork is on black, so it sits on the page without a visible edge */
-  box-shadow: 0 0 0 1px var(--border), 0 22px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 1px var(--border), 0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
 .market-banner {
@@ -187,3 +194,136 @@
 
 .market-banner__copy h2 { margin-bottom: 0.5rem; }
 .market-banner__copy p { margin: 0; color: var(--text-soft); max-width: 52ch; }
+
+/* -------------------------------------------------- landing page scan table */
+
+.section--flush { padding-top: 0; }
+
+.scan-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.scan-head h2 { margin: 0; font-size: 1.25rem; }
+.scan-head__hint { margin: 0; flex: 1 1 18rem; color: var(--text-dim); font-size: 0.86rem; }
+
+.quick-scan__group--actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.home-results {
+  margin-top: 0.9rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-results__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.home-results__more { color: var(--accent); text-decoration: none; font-size: 0.8rem; }
+.home-results__more:hover { text-decoration: underline; }
+
+.home-results__table { width: 100%; border-collapse: collapse; }
+
+.home-results__table th {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.home-results__table td {
+  padding: 0.42rem 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.home-results__table .num { text-align: right; font-family: var(--mono); }
+.home-results__table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+
+.home-results__ticker {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.home-results__ticker:hover { color: var(--accent); }
+
+.home-results__name {
+  color: var(--text-soft);
+  /* one line per row keeps the table scannable when a name runs long */
+  max-width: 22ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.home-results__empty { margin: 0; padding: 1rem; color: var(--text-dim); font-size: 0.9rem; }
+
+.score-pill {
+  display: inline-block;
+  min-width: 2.4rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(59, 240, 149, 0.12);
+  color: #3bf095;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.score-pill.tone-neutral { background: rgba(214, 168, 30, 0.14); color: var(--warn); }
+.score-pill.tone-weak { background: rgba(255, 154, 90, 0.14); color: #ff9a5a; }
+.score-pill.tone-bad { background: rgba(224, 82, 104, 0.14); color: var(--down); }
+
+@media (max-width: 760px) {
+  .home-results__name, .home-results__vol { display: none; }
+  .home-results__table td, .home-results__table th { padding-left: 0.6rem; padding-right: 0.6rem; }
+
+  /* Two long strings on one narrow row wrap into each other — stack them. */
+  .home-results__head { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+
+  .hero__slogan { font-size: 0.95rem; }
+}
+
+/* The filter form folds away where vertical space is scarce. */
+.scan-filters { border: 0; }
+
+.scan-filters__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  list-style: none;
+}
+
+.scan-filters__summary::-webkit-details-marker { display: none; }
+.scan-filters__summary::after { content: '▾'; color: var(--text-dim); }
+.scan-filters[open] .scan-filters__summary::after { content: '▴'; }
+.scan-filters__count { color: var(--text-dim); }
+.scan-filters[open] .scan-filters__summary { margin-bottom: 0.6rem; }

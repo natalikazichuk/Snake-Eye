@@ -14,8 +14,12 @@
 }
 
 @media (max-width: 1000px) {
-  .hero { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; padding-top: 2.5rem; }
-  .hero__logo { width: min(240px, 52%); }
+  /*
+   * The hero is a flex masthead now, not a two-column grid — it needs no
+   * override here. The old rule blew the mark back up to 240px on the widths
+   * that can least afford it.
+   */
+  .hero { padding-top: 1.25rem; }
   .quick-scan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .quick-scan__group--wide { grid-column: span 2; }
   .quick-scan__submit { grid-column: span 2; }
@@ -36,7 +40,11 @@
   .site-nav { width: 100%; justify-content: space-between; gap: 0.15rem; }
   .site-nav a { padding: 0.45rem 0.55rem; font-size: 0.85rem; }
 
+  /* Below this width the buttons get their own row and share it evenly. */
+  .hero__actions { margin-left: 0; width: 100%; }
   .hero__actions .btn { flex: 1 1 auto; }
+  .hero__logo { width: 56px; }
+  .hero__title { font-size: 1.55rem; }
   .score-components { grid-template-columns: minmax(0, 1fr); }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
