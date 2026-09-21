@@ -256,6 +256,33 @@ like a missing entitlement. The ingest polls up to eight times, 1.2s apart, and
 merges across attempts, because a field present in one response can be absent
 from the next.
 
+#### What a live gateway actually sends
+
+Probed with `npm run fields --symbol PLUG`, ten polls:
+
+| id | value | meaning |
+|---|---|---|
+| 7280 | `"Energy-Alternate Sources"` | industry |
+| 7281 | `"Energy-Alternate Sources"` | category (same string for most US equities) |
+| 7282 | `"54.6M"`, `7282_raw: 54600000` | 90-day average volume |
+| 7283 | `"68.492%"` | option implied volatility |
+| 7284 | `"81.259%"` | historic volatility |
+| 7285 | `"0.32"` | put/call interest |
+| 7286–7288 | never sent | dividend amount, yield, ex-date — PLUG pays none |
+| **7289–7291** | **never sent** | **market cap, P/E, EPS** |
+| 7293 / 7294 | `"4.58"` / `"1.70"` | 52-week high / low |
+| 7295 | `"0.0000"` | open (market closed) |
+
+7289–7291 are served from the **fundamentals feed**, not the price feed. On an
+account without the Refinitiv entitlement they do not arrive late — they do not
+arrive at all, however long you poll. Dividend fields going missing on a company
+that pays no dividend is normal; market cap going missing is not, and that is
+the tell.
+
+The ingest tallies this across the whole run: when no symbol ever receives those
+three ids and no Refinitiv path answers, it says so and stops suggesting that
+the request was malformed.
+
 #### Field numbers differ between gateway builds
 
 Snapshot fields are identified by number, and the published numbering does not
@@ -263,7 +290,7 @@ match every build. This project shipped `7282` mapped to *Category* on the
 strength of the public list; the gateway answered it with an average volume
 (`"54.6M"`, with `"7282_raw": 54600000` beside it), so the scanner would have
 filed a volume as a text label. Read the mapping off your own gateway instead of
-trusting any list, including this one:
+trusting any list, including the table above:
 
 ```bash
 npm run fields -- --symbol PLUG
