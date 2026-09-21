@@ -40,6 +40,7 @@ import {
   SNAPSHOT_FIELDS,
   buildPayload,
   buildStockRecord,
+  countsAsFundamentals,
   normalizeFundamentals,
   normalizeHistory,
   normalizeSnapshot,
@@ -354,20 +355,42 @@ async function lookupExchange(gateway, symbol) {
  * subscription and comes back with the field list unpopulated, the second
  * carries the values.
  */
-async function fetchSnapshot(gateway, conid) {
-  const fields = Object.keys(SNAPSHOT_FIELDS).join(',');
-  const url = `${gateway}/v1/api/iserver/marketdata/snapshot?conids=${conid}&fields=${fields}`;
+/**
+ * The snapshot endpoint does not answer a question, it subscribes to a feed.
+ * The first call opens the subscription and returns the row with no fields on
+ * it; later calls return whatever has arrived so far, and the slower fields
+ * (market cap, P/E, EPS) can take several seconds longer than industry and
+ * average volume. Two calls therefore look like "only industry is available" —
+ * which is exactly how this read as "no entitlement". Poll until the requested
+ * fields stop arriving, and merge across attempts, since a field present in one
+ * response may be absent from the next.
+ */
+const SNAPSHOT_ATTEMPTS = 8;
+const SNAPSHOT_GAP_MS = 1200;
 
-  try {
-    await request(url, { timeout: 15000 });
-  } catch {
-    return { data: {}, raw: null };
+async function fetchSnapshot(gateway, conid) {
+  const ids = Object.keys(SNAPSHOT_FIELDS);
+  const url = `${gateway}/v1/api/iserver/marketdata/snapshot?conids=${conid}&fields=${ids.join(',')}`;
+  const merged = {};
+  let attempts = 0;
+
+  for (let i = 0; i < SNAPSHOT_ATTEMPTS; i += 1) {
+    attempts = i + 1;
+    let rows = null;
+    try {
+      rows = await request(url, { timeout: 15000 });
+    } catch {
+      /* a refused poll is not fatal — the next one may still answer */
+    }
+
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row && typeof row === 'object') Object.assign(merged, row);
+    if (ids.every((id) => merged[id] !== undefined)) break;
+    if (i < SNAPSHOT_ATTEMPTS - 1) await sleep(SNAPSHOT_GAP_MS);
   }
 
-  await sleep(1500);
-  const rows = await request(url, { timeout: 15000 });
-  const row = Array.isArray(rows) ? rows[0] : rows;
-  return { data: normalizeSnapshot(row), raw: row };
+  const missing = ids.filter((id) => merged[id] === undefined);
+  return { data: normalizeSnapshot(merged), raw: merged, attempts, missing };
 }
 
 /**
@@ -419,6 +442,8 @@ async function fetchFundamentals(gateway, conid, { debug = false } = {}) {
     console.log(`      fundamentals for ${conid}:`);
     console.log(`        refinitiv path : ${refinitiv.path || 'none answered'}`);
     console.log(`        refinitiv raw  : ${JSON.stringify(refinitiv.raw).slice(0, 400)}`);
+    console.log(`        snapshot polls : ${snapshot.attempts}, fields never sent: ` +
+      `${snapshot.missing.length ? snapshot.missing.join(', ') : 'none'}`);
     console.log(`        snapshot raw   : ${JSON.stringify(snapshot.raw).slice(0, 400)}`);
     console.log(`        merged         : ${JSON.stringify(merged)}`);
   }
@@ -530,7 +555,7 @@ async function main() {
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, `${JSON.stringify(payload)}\n`);
 
-  const withFundamentals = stocks.filter((s) => Object.values(s.fundamentals).some((v) => v !== null && v !== undefined)).length;
+  const withFundamentals = stocks.filter((s) => countsAsFundamentals(s.fundamentals)).length;
   const withRatios = stocks.filter((s) => s.fundamentals.revenue !== null && s.fundamentals.revenue !== undefined).length;
   const sampleVolume = stocks[0].history.volume.at(-1);
 
