@@ -7,7 +7,7 @@
  */
 
 import { loadUniverse, loadPresets } from './api.js';
-import { criteriaToQuery, normalizeCriteria } from './filters.js';
+import { applyFilters, countActiveFilters, criteriaToQuery, explainNoMatches, normalizeCriteria } from './filters.js';
 import { count as watchlistCount, subscribe as onWatchlistChange } from './watchlist.js';
 
 /* ------------------------------------------------------------------ format */
@@ -241,44 +241,113 @@ function initShell() {
 
 /* ---------------------------------------------------------------- homepage */
 
-/** The landing page form is a subset of the scanner's — hand it off with a query. */
-function initQuickScan() {
-  const form = qs('#quick-scan');
-  if (!form) return;
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const data = new FormData(form);
-    const raw = Object.fromEntries(data.entries());
-    raw.exchanges = data.getAll('exchanges');
-    window.location.href = scannerHref(raw);
-  });
+/** The landing page form is a subset of the scanner's, read the same way. */
+function readQuickScan(form) {
+  const data = new FormData(form);
+  const raw = Object.fromEntries(data.entries());
+  raw.exchanges = data.getAll('exchanges');
+  return normalizeCriteria(raw);
 }
 
-/** Landing page: today's strongest setups, straight from the scored universe. */
-async function initHomeHighlights() {
-  const container = qs('#home-highlights');
+/** How many rows the landing page shows before pointing at the full scanner. */
+const HOME_ROWS = 15;
+
+/**
+ * The landing page runs the scan itself rather than sending the form to
+ * another page: the point of a scanner is the list of matches, and making
+ * someone submit a form and wait for a navigation to see one is a worse
+ * version of the same thing. The full scanner keeps the columns, sorting,
+ * presets and URL sharing this deliberately leaves out.
+ */
+function initQuickScan(rows) {
+  const form = qs('#quick-scan');
+  const body = qs('#home-results-body');
+  if (!form || !body) return;
+
+  const countLabel = qs('#home-results-count');
+  const emptyNote = qs('#home-results-empty');
+  const moreLink = qs('#home-results-more');
+
+  function run() {
+    const criteria = readQuickScan(form);
+    const matches = applyFilters(rows, criteria);
+    const shown = matches.slice(0, HOME_ROWS);
+
+    body.replaceChildren(...shown.map((row) => el('tr', {}, [
+      el('td', {}, [el('a', { className: 'home-results__ticker', href: stockHref(row.ticker), text: row.ticker })]),
+      el('td', { className: 'home-results__name', text: row.name }),
+      el('td', { className: 'num', text: formatPrice(row.metrics.price) }),
+      el('td', {
+        className: `num is-${direction(row.metrics.changePercent)}`,
+        text: formatSignedPercent(row.metrics.changePercent),
+      }),
+      el('td', { className: 'num home-results__vol', text: formatCompact(row.metrics.volume) }),
+      el('td', {}, [el('span', {
+        className: `score-pill tone-${row.score.tone}`,
+        text: String(row.score.total),
+      })]),
+    ])));
+
+    const active = countActiveFilters(criteria);
+    const filterCount = qs('#scan-filters-count');
+    if (filterCount) {
+      filterCount.textContent = active === 0 ? 'none active' : `${active} active`;
+    }
+    countLabel.textContent = matches.length === rows.length
+      ? `all ${rows.length} symbols`
+      : `${matches.length} of ${rows.length} · ${active} filter${active === 1 ? '' : 's'}`;
+
+    emptyNote.hidden = matches.length > 0;
+    if (!matches.length) {
+      const reasons = explainNoMatches(rows, criteria);
+      emptyNote.textContent = reasons.length
+        ? `Nothing matched. The narrowest filter is ${reasons[0].label} — it alone rejects ${reasons[0].rejected} of ${rows.length}.`
+        : 'Nothing matched.';
+    }
+
+    moreLink.hidden = matches.length <= HOME_ROWS;
+    moreLink.textContent = `See all ${matches.length} in the full scanner →`;
+    moreLink.href = scannerHref(criteria);
+  }
+
+  form.addEventListener('submit', (event) => event.preventDefault());
+  form.addEventListener('input', run);
+  form.addEventListener('change', run);
+  qs('#quick-scan-reset')?.addEventListener('click', () => {
+    form.reset();
+    run();
+  });
+
+  /*
+   * On a phone the filter form is a screenful in front of the answer, so it
+   * collapses; on a wide screen there is room for both and hiding it would only
+   * add a click. `details` cannot be held open by CSS, so the viewport decides
+   * here — but only until the reader opens or closes it themselves, after which
+   * their choice stands.
+   */
+  const filters = qs('#scan-filters');
+  if (filters) {
+    const wide = window.matchMedia('(min-width: 761px)');
+    let touched = false;
+    filters.addEventListener('toggle', () => { touched = true; });
+    const sync = () => { if (!touched) filters.open = wide.matches; };
+    wide.addEventListener('change', sync);
+    sync();
+  }
+
+  run();
+}
+
+/** Landing page: load the universe once, then wire the scan and the presets. */
+async function initHome() {
+  const container = qs('#home-results');
   if (!container) return;
 
   try {
     const [{ rows, meta }, presets] = await Promise.all([loadUniverse(), loadPresets()]);
 
-    const top = rows.slice(0, 5);
-    container.replaceChildren(
-      ...top.map((row) =>
-        el('a', { className: 'highlight', href: stockHref(row.ticker) }, [
-          el('span', { className: 'highlight__ticker', text: row.ticker }),
-          el('span', { className: 'highlight__price', text: formatPrice(row.metrics.price) }),
-          el('span', {
-            className: `highlight__change is-${direction(row.metrics.changePercent)}`,
-            text: formatSignedPercent(row.metrics.changePercent),
-          }),
-          el('span', { className: 'highlight__score', text: String(row.score.total) }),
-        ]),
-      ),
-    );
-
     renderSourceInfo(meta, rows.length);
+    initQuickScan(rows);
 
     const presetList = qs('#home-presets');
     if (presetList) {
@@ -298,6 +367,5 @@ async function initHomeHighlights() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initShell();
-  initQuickScan();
-  initHomeHighlights();
+  initHome();
 });

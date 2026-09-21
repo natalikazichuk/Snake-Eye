@@ -36,7 +36,7 @@
   <header class="site-header">
     <div class="wrap site-header__inner">
       <a class="brand" href="index.html">
-        <img class="brand__logo" src="assets/images/logo/snake-eye-mark.png" alt="" width="28" height="28" />
+        <img class="brand__logo" src="assets/images/logo/snake-eye-mark-64.png" alt="" width="28" height="28" decoding="async" />
         <span class="brand__name">SNAKE <em>👁</em> EYE</span>
       </a>
       <nav class="site-nav" aria-label="Main">
@@ -52,60 +52,49 @@
 
   <main class="wrap">
     <section class="hero">
-      <div class="hero__copy">
+      <picture>
+        <source srcset="assets/images/logo/snake-eye-logo.webp" type="image/webp" />
         <img
           class="hero__logo"
           src="assets/images/logo/snake-eye-logo.jpg"
-          alt="Snake Eye — market scanner"
-          width="640"
-          height="640"
+          alt=""
+          width="560"
+          height="560"
+          fetchpriority="high"
+          decoding="async"
         />
+      </picture>
+      <div class="hero__copy">
         <p class="hero__eyebrow">Market Scanner</p>
-        <h1 class="hero__title">SNAKE <span>👁</span> EYE</h1>
+        <h1 class="hero__title">SNAKE <span>&#128065;</span> EYE</h1>
         <p class="hero__slogan">See the market. Find the target.</p>
-        <p class="hero__lead">
-          Set your conditions once — exchange, price, volume, fundamentals, RSI, MACD,
-          Awesome Oscillator — and Snake Eye leaves only the stocks that match, ranked by
-          a single 0–100 Snake Score.
-        </p>
-        <div class="hero__actions">
-          <a class="btn btn--primary btn--lg" href="pages/scanner.html">🐍 Open the scanner</a>
-          <a class="btn btn--ghost btn--lg" href="#how">How it works</a>
-        </div>
       </div>
-
-      <aside class="hero__panel panel" aria-labelledby="top-setups-title">
-        <div class="panel__head">
-          <h2 class="panel__title" id="top-setups-title">Today's strongest setups</h2>
-          <span class="panel__meta" id="home-data-stamp" data-source-stamp>loading…</span>
-        </div>
-        <div class="highlights" id="home-highlights">
-          <p class="highlights__loading">Scanning the universe…</p>
-        </div>
-        <div class="highlights__legend">
-          <span>Ticker</span><span>Price</span><span>Change</span><span>Score</span>
-        </div>
-      </aside>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="pages/scanner.html">&#128013; Full scanner</a>
+        <a class="btn btn--ghost" href="#how">How it works</a>
+      </div>
     </section>
 
-    <section class="section" aria-labelledby="quick-scan-title">
-      <div class="section__head">
-        <div>
-          <h2 id="quick-scan-title">Quick scan</h2>
-          <p class="section__lead">
-            The essentials from the full scanner. Leave a field empty to ignore it —
-            an empty form scans the whole universe. The greyed-out numbers are examples,
-            not defaults.
-          </p>
-        </div>
+    <section class="section section--flush" aria-labelledby="quick-scan-title">
+      <div class="scan-head">
+        <h2 id="quick-scan-title">Scan</h2>
+        <p class="scan-head__hint">
+          Every field is optional — an empty form scans everything. Results update as you type.
+        </p>
+        <span class="panel__meta" id="home-data-stamp" data-source-stamp>loading&#8230;</span>
       </div>
 
-      <form class="quick-scan panel" id="quick-scan">
+      <details class="scan-filters" id="scan-filters">
+        <summary class="scan-filters__summary">
+          <span>Filters</span>
+          <span class="scan-filters__count" id="scan-filters-count">none active</span>
+        </summary>
+        <form class="quick-scan panel" id="quick-scan">
         <fieldset class="quick-scan__group">
           <legend class="field__label">Exchange</legend>
           <div class="check-grid">
-            <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" checked /> NASDAQ</label>
-            <label class="check"><input type="checkbox" name="exchanges" value="NYSE" checked /> NYSE</label>
+            <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" /> NASDAQ</label>
+            <label class="check"><input type="checkbox" name="exchanges" value="NYSE" /> NYSE</label>
           </div>
         </fieldset>
 
@@ -133,19 +122,32 @@
           </div>
         </fieldset>
 
-        <fieldset class="quick-scan__group quick-scan__group--wide">
-          <legend class="field__label">Momentum</legend>
-          <div class="check-grid">
-            <label class="check"><input type="checkbox" name="macdBullish" /> MACD bullish</label>
-            <label class="check"><input type="checkbox" name="aoPositive" /> Awesome Oscillator positive</label>
-            <label class="check"><input type="checkbox" name="priceAboveSma50" /> Price &gt; SMA50</label>
-          </div>
-        </fieldset>
+        <fieldset class="quick-scan__group quick-scan__group--actions">
+          <button class="btn btn--ghost btn--sm" type="button" id="quick-scan-reset">Reset filters</button>
+          </fieldset>
+        </form>
+      </details>
 
-        <div class="quick-scan__submit">
-          <button class="btn btn--primary btn--lg btn--block" type="submit">🐍 SCAN MARKET</button>
+      <div class="home-results panel" id="home-results">
+        <div class="home-results__head">
+          <span class="home-results__count" id="home-results-count">scanning&#8230;</span>
+          <a class="home-results__more" id="home-results-more" href="pages/scanner.html" hidden></a>
         </div>
-      </form>
+        <table class="home-results__table">
+          <thead>
+            <tr>
+              <th scope="col">Ticker</th>
+              <th scope="col" class="home-results__name">Name</th>
+              <th scope="col" class="num">Price</th>
+              <th scope="col" class="num">Change</th>
+              <th scope="col" class="num home-results__vol">Volume</th>
+              <th scope="col">Score</th>
+            </tr>
+          </thead>
+          <tbody id="home-results-body"></tbody>
+        </table>
+        <p class="home-results__empty" id="home-results-empty" hidden></p>
+      </div>
 
       <div class="preset-row">
         <span class="preset-row__label">Or start from a strategy:</span>
@@ -154,14 +156,18 @@
     </section>
 
     <section class="market-banner" aria-label="NYSE and NASDAQ">
-      <img
-        class="market-banner__art"
-        src="assets/images/market-bull-bear.jpg"
-        alt="Bull and bear facing each other in front of the NYSE and NASDAQ buildings"
-        width="1100"
-        height="1100"
-        loading="lazy"
-      />
+      <picture>
+        <source srcset="assets/images/market-bull-bear.webp" type="image/webp" />
+        <img
+          class="market-banner__art"
+          src="assets/images/market-bull-bear.jpg"
+          alt="Bull and bear facing each other in front of the NYSE and NASDAQ buildings"
+          width="680"
+          height="680"
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
       <div class="market-banner__copy">
         <h2>Both sides of the tape</h2>
         <p>
