@@ -72,6 +72,33 @@ cached copy of the scripts.
 
 ---
 
+## Reading it from a phone
+
+The site is served by your own machine, so the phone needs to be on the same
+Wi-Fi and the PC needs to be on with `npm start` running. There is no cloud
+copy: close the window and the phone sees nothing.
+
+`npm start` prints the addresses it is listening on:
+
+```
+Available on:
+  http://127.0.0.1:8080
+  http://192.168.1.42:8080     <- this one
+```
+
+Type that second address on the phone. `localhost` means the phone itself, so
+it will not work there.
+
+Windows may ask to allow Node through the firewall the first time — allow it
+for **private networks**. If the page will not load, that prompt was probably
+declined; Windows Defender Firewall → Allow an app → Node.js → tick Private.
+
+**The data is exactly as fresh as the last ingest.** Both devices read the same
+file, so the phone shows what the PC shows — end-of-day bars from the session
+named in the header, not live intraday prices. The header spells the age out
+(`session 2026-09-18 · 3 days ago`) and turns amber once it is over a week old,
+so a stale file cannot pass for a fresh one.
+
 ## Why three windows
 
 Each of the three runs until you stop it. `npm start` holds the terminal for as

@@ -133,12 +133,42 @@ export function renderError(container, error) {
  * IBKR snapshot is loaded, saying "demo data" would be simply untrue, so both
  * the stamp and the disclaimer are rewritten here.
  */
+/**
+ * How stale the data is, in words.
+ *
+ * A date alone makes the reader do the arithmetic, and on a phone glanced at
+ * over breakfast that is exactly the arithmetic they will skip. Weekends are
+ * not counted out: "3 days ago" over a weekend still means the last session
+ * was Friday, which is the right thing to know.
+ */
+function describeAge(lastSession) {
+  if (!lastSession) return null;
+
+  const then = new Date(`${lastSession}T00:00:00Z`);
+  if (Number.isNaN(then.getTime())) return null;
+
+  const today = new Date();
+  const days = Math.floor(
+    (Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) - then.getTime())
+    / 86400000,
+  );
+
+  if (days < 0) return null;
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return 'over a week old';
+  return `${Math.floor(days / 7)} weeks old`;
+}
+
 export function renderSourceInfo(meta = {}, symbolCount = 0) {
   const live = meta.provider === 'IBKR';
+  const age = describeAge(meta.lastSession);
 
   const stamp = [
     `${symbolCount} symbols`,
     meta.lastSession ? `session ${meta.lastSession}` : null,
+    age,
     live ? 'Interactive Brokers · end of day' : 'demo data',
   ]
     .filter(Boolean)
@@ -146,6 +176,7 @@ export function renderSourceInfo(meta = {}, symbolCount = 0) {
 
   qsa('[data-source-stamp]').forEach((node) => {
     node.textContent = stamp;
+    node.classList.toggle('is-stale', live && /week/.test(age || ''));
   });
 
   markDemo(!live);
