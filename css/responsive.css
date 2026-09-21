@@ -20,9 +20,6 @@
    * that can least afford it.
    */
   .hero { padding-top: 1.25rem; }
-  .quick-scan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .quick-scan__group--wide { grid-column: span 2; }
-  .quick-scan__submit { grid-column: span 2; }
   .feature-grid { grid-template-columns: minmax(0, 1fr); }
   .market-banner { grid-template-columns: minmax(0, 1fr); }
   .market-banner__art { max-height: 260px; }
@@ -43,7 +40,7 @@
   /* Below this width the buttons get their own row and share it evenly. */
   .hero__actions { margin-left: 0; width: 100%; }
   .hero__actions .btn { flex: 1 1 auto; }
-  .hero__logo { width: 56px; }
+  .hero__logo { width: 84px; }
   .hero__title { font-size: 1.55rem; }
   .score-components { grid-template-columns: minmax(0, 1fr); }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -79,8 +76,7 @@
 }
 
 @media (max-width: 520px) {
-  .quick-scan { grid-template-columns: minmax(0, 1fr); }
-  .quick-scan__group--wide, .quick-scan__submit { grid-column: span 1; }
+  .quick-scan__group--actions { margin-left: 0; width: 100%; }
   .hero__title { font-size: 2.1rem; }
   .stock-hero__ticker { font-size: 1.8rem; }
   .stock-hero__price { font-size: 1.7rem; }

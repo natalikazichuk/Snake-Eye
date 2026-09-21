@@ -29,7 +29,7 @@
 
 .hero__title {
   margin: 0;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-size: clamp(1.8rem, 4.4vw, 2.9rem);
   letter-spacing: 0.02em;
 }
 
@@ -107,15 +107,35 @@
 
 /* --------------------------------------------------------------- quick scan */
 
+/*
+ * The filter form is a control strip, not a page of its own: it sits between
+ * the reader and the table, so every row of padding in it is a row of matches
+ * they cannot see. Groups pack as tightly as their contents allow and wrap on
+ * their own rather than holding a fixed four-column grid open.
+ */
 .quick-scan {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.25rem 1.5rem;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.1rem;
+  align-items: flex-end;
+  padding: 0.85rem 1rem;
 }
 
 .quick-scan__group { min-width: 0; margin: 0; padding: 0; border: 0; }
-.quick-scan__group legend { padding: 0; margin-bottom: 0.45rem; }
+.quick-scan__group legend { padding: 0; margin-bottom: 0.25rem; font-size: 0.68rem; }
+
+/* Narrow enough for the values they hold: prices and RSI are three or four
+   characters, not a sentence. */
+.quick-scan .field-row { gap: 0.4rem; }
+.quick-scan .field { gap: 0.2rem; }
+.quick-scan .field__label { font-size: 0.66rem; letter-spacing: 0.06em; }
+.quick-scan input[type="number"] {
+  width: 5.6rem;
+  padding: 0.34rem 0.45rem;
+  font-size: 0.86rem;
+}
+.quick-scan .check { padding: 0.3rem 0.55rem; font-size: 0.86rem; }
+.quick-scan .check-grid { gap: 0.35rem; }
 .quick-scan__group--wide { grid-column: span 3; }
 .quick-scan__submit { grid-column: span 1; align-self: end; }
 
@@ -161,11 +181,11 @@
 
 .hero__logo {
   display: block;
-  width: 72px;
+  width: 132px;
   height: auto;
-  border-radius: 12px;
+  border-radius: 14px;
   /* the artwork is on black, so it sits on the page without a visible edge */
-  box-shadow: 0 0 0 1px var(--border), 0 10px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px var(--border), 0 12px 30px rgba(0, 0, 0, 0.55);
 }
 
 .market-banner {
@@ -213,6 +233,7 @@
 .quick-scan__group--actions {
   display: flex;
   align-items: flex-end;
+  margin-left: auto;
 }
 
 .home-results {
