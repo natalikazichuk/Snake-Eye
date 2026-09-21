@@ -59,6 +59,16 @@ const SEC_FACTS = (cik) => (options.base
 
 if (!options.contact || !options.contact.includes('@')) {
   console.error('✗ SEC requires automated requests to identify themselves.\n');
+
+  if (options.contact) {
+    // Saying what arrived catches the common case: a quote typed instead of an
+    // @ on a non-US keyboard layout, which the shell then strips, so the
+    // address looks right on screen and wrong to the script.
+    console.error(`  Received: ${options.contact}`);
+    console.error('  That has no @ in it. If you typed a quote by mistake, the shell removed');
+    console.error('  it before the script saw anything — switch layouts and retype the @.\n');
+  }
+
   console.error('  npm run fundamentals -- --contact you@example.com\n');
   console.error('  The address goes into the User-Agent header and nowhere else.');
   console.error('  Requests without one are refused by SEC, not by this script.');
