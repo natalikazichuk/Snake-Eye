@@ -1,0 +1,97 @@
+/* ==========================================================================
+   Snake Eye — my tickers (pages/universe.html)
+   ========================================================================== */
+
+.universe-page { padding-bottom: 3rem; }
+
+.universe-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.universe-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.universe-stat__label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.universe-stat__value { font-family: var(--mono); font-size: 1.35rem; font-weight: 700; }
+.universe-stat__note { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
+
+.universe-panel { padding: 0; overflow: hidden; }
+.universe-panel .panel__head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); }
+
+/* The table is wider than a phone; let it scroll rather than crush the columns. */
+.table-scroll { overflow-x: auto; }
+
+.universe-table { width: 100%; border-collapse: collapse; }
+
+.universe-table th {
+  padding: 0.5rem 0.9rem;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.universe-table td {
+  padding: 0.45rem 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.universe-table .num { text-align: right; font-family: var(--mono); }
+.universe-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+
+.universe-table__link { display: flex; flex-direction: column; text-decoration: none; color: var(--text); }
+.universe-table__link strong { font-family: var(--mono); }
+.universe-table__link:hover strong { color: var(--accent); }
+.universe-table__name { color: var(--text-soft); font-size: 0.78rem; }
+
+.universe-missing { margin-top: 1.25rem; }
+.universe-missing__lead { margin: 0 0 0.6rem; color: var(--text-soft); font-size: 0.9rem; }
+
+.universe-missing__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.universe-missing__list code {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(4, 8, 11, 0.6);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.universe-missing__hint { margin: 0; color: var(--text-dim); font-family: var(--mono); font-size: 0.8rem; }
+
+@media (max-width: 720px) {
+  .universe-table .col-volume, .universe-table .col-rvol, .universe-table .col-bars { display: none; }
+  .universe-stat__value { font-size: 1.15rem; }
+}

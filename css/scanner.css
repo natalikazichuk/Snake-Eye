@@ -223,3 +223,55 @@
 
 .empty__blockers li + li { margin-top: 0.25rem; }
 .empty__count { font-family: var(--mono); color: var(--warn); white-space: nowrap; }
+
+/* ------------------------------------------------------------- near misses */
+
+.near-miss {
+  max-width: 44rem;
+  margin: 1.25rem auto 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+
+.near-miss__title {
+  margin: 0 0 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.near-miss__list { margin: 0; padding: 0; list-style: none; }
+
+.near-miss__item {
+  display: grid;
+  grid-template-columns: 4.5rem 4.5rem minmax(0, 1fr) 2.5rem;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.86rem;
+}
+
+.near-miss__item:first-child { border-top: 0; }
+.near-miss__ticker { font-family: var(--mono); font-weight: 700; color: var(--text); text-decoration: none; }
+.near-miss__ticker:hover { color: var(--accent); }
+.near-miss__met { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); }
+
+.near-miss__short {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.near-miss__score { font-family: var(--mono); font-weight: 700; text-align: right; color: #3bf095; }
+.near-miss__score.tone-neutral { color: var(--warn); }
+.near-miss__score.tone-weak { color: #ff9a5a; }
+.near-miss__score.tone-bad { color: var(--down); }
+
+@media (max-width: 640px) {
+  .near-miss__item { grid-template-columns: 4rem 1fr 2.2rem; }
+  .near-miss__short { grid-column: 1 / -1; white-space: normal; }
+}

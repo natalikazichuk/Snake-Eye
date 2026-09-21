@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Watchlist — Snake Eye</title>
-  <meta name="description" content="Your saved symbols with live Snake Scores, stored in this browser." />
+  <title>My tickers — Snake Eye</title>
+  <meta name="description" content="Every symbol pulled from your own Interactive Brokers subscription, scored and compared." />
   <link rel="icon" href="../assets/images/icons/favicon-64.png" type="image/png" sizes="64x64" />
   <link rel="stylesheet" href="../css/style.css" />
-  <link rel="stylesheet" href="../css/stock.css" />
+  <link rel="stylesheet" href="../css/universe.css" />
   <link rel="stylesheet" href="../css/responsive.css" />
   <!--
     Opened from the file system, every module script here is blocked by the
@@ -29,14 +29,14 @@
       });
     }
   </script>
-  <script type="module" src="../js/watchlist-page.js"></script>
+  <script type="module" src="../js/universe-page.js"></script>
 </head>
-<body data-page="watchlist">
+<body data-page="universe">
   <header class="site-header">
     <div class="wrap site-header__inner">
       <a class="brand" href="../index.html">
         <img class="brand__logo" src="../assets/images/logo/snake-eye-mark-64.png" alt="" width="28" height="28" decoding="async" />
-        <span class="brand__name">SNAKE <em>👁</em> EYE</span>
+        <span class="brand__name">SNAKE <em>&#128065;</em> EYE</span>
       </a>
       <nav class="site-nav" aria-label="Main">
         <a href="../index.html" data-nav="home">Home</a>
@@ -50,33 +50,58 @@
     </div>
   </header>
 
-  <main class="wrap watchlist-page">
+  <main class="wrap universe-page">
     <div class="section__head">
       <div>
-        <h1>My snake list 👁</h1>
+        <h1>My tickers</h1>
         <p class="section__lead">
-          Saved symbols, re-scored against the latest session. The list lives in this
-          browser only — no account, nothing sent anywhere.
+          Everything the last ingest pulled from your own Interactive Brokers subscription —
+          no filters applied, so a symbol never silently disappears the way it can in the scanner.
         </p>
       </div>
-      <div class="watchlist-head__actions">
-        <span class="panel__meta" id="watchlist-total"></span>
-        <button class="btn btn--ghost" type="button" id="watchlist-clear" hidden>Clear all</button>
-      </div>
+      <span class="panel__meta" data-source-stamp>loading&#8230;</span>
     </div>
 
-    <div class="watchlist" id="watchlist"></div>
+    <div class="universe-summary" id="universe-summary"></div>
 
-    <p class="disclaimer" data-disclaimer>
-      <strong>Demo data.</strong> Symbols and prices here are generated for development.
-      The Snake Score measures fit to the scanner's criteria, not future performance.
-    </p>
+    <section class="panel universe-panel" id="universe-panel" aria-labelledby="universe-title">
+      <div class="panel__head">
+        <h2 class="panel__title" id="universe-title">Pulled symbols</h2>
+        <span class="panel__meta" id="universe-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="universe-table">
+          <thead>
+            <tr>
+              <th scope="col">Ticker</th>
+              <th scope="col" class="col-exchange">Exchange</th>
+              <th scope="col" class="num">Price</th>
+              <th scope="col" class="num">Change</th>
+              <th scope="col" class="num col-volume">Volume</th>
+              <th scope="col" class="num col-rvol">RVol</th>
+              <th scope="col" class="num col-rsi">RSI</th>
+              <th scope="col" class="num col-bars">Bars</th>
+              <th scope="col" class="num">Score</th>
+            </tr>
+          </thead>
+          <tbody id="universe-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel universe-missing" id="universe-missing" hidden aria-labelledby="missing-title">
+      <div class="panel__head">
+        <h2 class="panel__title" id="missing-title">In your list but not pulled</h2>
+      </div>
+      <div id="universe-missing-body"></div>
+    </section>
+
+    <p class="disclaimer" data-disclaimer></p>
   </main>
 
   <footer class="site-footer">
     <div class="wrap site-footer__inner">
-      <div><p><strong>🐍 Snake Eye</strong> — see the market, find the target.</p></div>
-      <div><p>© <span data-current-year>2026</span> Snake Eye</p></div>
+      <p>Snake Eye &middot; <span data-year></span></p>
     </div>
   </footer>
 </body>
