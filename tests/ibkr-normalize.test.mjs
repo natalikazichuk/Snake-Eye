@@ -16,6 +16,7 @@ import {
   buildStockRecord,
   normalizeFundamentals,
   normalizeHistory,
+  countsAsFundamentals,
   normalizeSnapshot,
   parseIbkrNumber,
   pickContract,
@@ -201,6 +202,31 @@ test('a non-positive P/E from the snapshot becomes null', () => {
   const snapshot = normalizeSnapshot({ '7290': '-4.2', '7291': '-0.35' });
   assert.equal(snapshot.pe, null);
   assert.equal(snapshot.eps, -0.35, 'the loss itself is still reported');
+});
+
+test('the exact value beside an abbreviated one wins', () => {
+  // A real PLUG snapshot: the gateway rounds the label to three significant
+  // digits and puts the exact figure in the `_raw` companion.
+  const snapshot = normalizeSnapshot({
+    conid: 88385302, '7281': 'Energy-Alternate Sources',
+    '7282': '54.6M', '7282_raw': 54637812,
+  });
+  assert.equal(snapshot.avgVolume90d, 54637812, 'not 54600000 from the label');
+  assert.equal(snapshot.industry, 'Energy-Alternate Sources');
+});
+
+test('the label is still read when no companion is sent', () => {
+  const snapshot = normalizeSnapshot({ '7282': '2.45M' });
+  assert.equal(snapshot.avgVolume90d, 2450000);
+});
+
+test('an industry-only snapshot does not count as fundamentals', () => {
+  // This is what the gateway returns first, and counting it as a success
+  // reported "5/5 symbols" while every fundamental filter had nothing to match.
+  assert.equal(countsAsFundamentals({ industry: 'Computers-Other', avgVolume90d: 2450000 }), false);
+  assert.equal(countsAsFundamentals({ industry: 'Computers-Other', pe: 18.2 }), true);
+  assert.equal(countsAsFundamentals({}), false);
+  assert.equal(countsAsFundamentals(null), false);
 });
 
 test('an unpopulated snapshot yields nothing rather than zeros', () => {

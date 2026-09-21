@@ -234,7 +234,7 @@ IBKR serves these from two places, and the ingest asks both:
 
 | Source | Fields | Needs |
 |---|---|---|
-| Market data snapshot | market cap, P/E, EPS, dividend yield, industry | nothing beyond your market data subscription |
+| Market data snapshot | market cap, P/E, EPS, dividend yield, industry, 90-day average volume | nothing beyond your market data subscription |
 | Refinitiv fundamentals | revenue, growth, margins, ROE, debt/equity, current ratio | the Refinitiv/LSEG entitlement — **free for IBKR clients**, but it has to be switched on |
 
 If the run reports `fundamentals : 0/20`, the entitlement is not active on the
@@ -244,6 +244,46 @@ Fundamentals*, and re-run. Activation is not always instant.
 
 `--debug` prints which path answered and the raw payload, which is the quickest
 way to tell "not entitled" from "answered in a shape the script does not read".
+
+#### The snapshot is a subscription, not a question
+
+`/iserver/marketdata/snapshot` does not answer — it subscribes. The first call
+opens the feed and returns a row with no fields on it; each later call returns
+whatever has arrived so far, and the fields are not all equally quick. Industry
+and average volume land in the first second or two; market cap, P/E and EPS can
+take several more. Ask twice and you see only the fast ones, which looks exactly
+like a missing entitlement. The ingest polls up to eight times, 1.2s apart, and
+merges across attempts, because a field present in one response can be absent
+from the next.
+
+#### Field numbers differ between gateway builds
+
+Snapshot fields are identified by number, and the published numbering does not
+match every build. This project shipped `7282` mapped to *Category* on the
+strength of the public list; the gateway answered it with an average volume
+(`"54.6M"`, with `"7282_raw": 54600000` beside it), so the scanner would have
+filed a volume as a text label. Read the mapping off your own gateway instead of
+trusting any list, including this one:
+
+```bash
+npm run fields -- --symbol PLUG
+```
+
+It asks one contract for ids 7280–7296, polls until they stop arriving, and
+prints a table of id, the poll it first appeared on, and its value. Use
+`--from`/`--to` to widen the range.
+
+Where IBKR abbreviates a number for display it ships the exact value in a
+`_raw` companion (`"7282": "54.6M"` next to `"7282_raw": 54600000`). The ingest
+prefers the companion — the label is rounded to three significant digits, which
+is a 0.07% error on a market cap and worse on a small one.
+
+#### What counts as "fundamentals"
+
+The run reports a symbol as having fundamentals only when it carries a real
+metric — market cap, revenue, EPS, P/E, ROE, a margin, a growth rate. Industry
+is a label, and counting it reported `5/5 symbols` on runs where every
+fundamental filter still had nothing to match.
 
 When nothing comes back at all, this is handled rather than hidden:
 

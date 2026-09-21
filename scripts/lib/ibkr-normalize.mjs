@@ -176,10 +176,28 @@ export const SNAPSHOT_FIELDS = {
   7290: 'pe',
   7291: 'eps',
   7287: 'dividendYield',
-  7283: 'avgVolume90d',
+  7282: 'avgVolume90d',
   7281: 'industry',
-  7282: 'category',
 };
+
+/** Fields that are labels rather than numbers. */
+const SNAPSHOT_TEXT_FIELDS = new Set(['industry']);
+
+/**
+ * The keys that make a fundamentals block worth having. `industry` is a label,
+ * not a metric: counting it as "fundamentals present" reports success while
+ * every filter and the fundamental leg of the score still have nothing to work
+ * with.
+ */
+export const FUNDAMENTAL_METRICS = [
+  'marketCap', 'revenue', 'revenueGrowth', 'eps', 'epsGrowth', 'pe', 'ps',
+  'roe', 'debtEquity', 'grossMargin', 'operatingMargin', 'currentRatio',
+];
+
+export function countsAsFundamentals(fundamentals) {
+  if (!fundamentals) return false;
+  return FUNDAMENTAL_METRICS.some((key) => isNum(fundamentals[key]));
+}
 
 /** One snapshot row (keys are field numbers) -> the app's field names. */
 export function normalizeSnapshot(row) {
@@ -190,11 +208,16 @@ export function normalizeSnapshot(row) {
     const raw = row[field];
     if (raw === undefined || raw === null || raw === '') continue;
 
-    if (name === 'industry' || name === 'category') {
+    if (SNAPSHOT_TEXT_FIELDS.has(name)) {
       out[name] = String(raw);
       continue;
     }
-    const parsed = parseIbkrNumber(raw);
+
+    // IBKR abbreviates large numbers for display and ships the exact value
+    // beside it: `"7282": "54.6M"` with `"7282_raw": 54600000`. The companion
+    // is authoritative — the label is rounded to three significant digits.
+    const companion = row[`${field}_raw`];
+    const parsed = isNum(companion) ? companion : parseIbkrNumber(raw);
     if (parsed !== null) out[name] = parsed;
   }
 
