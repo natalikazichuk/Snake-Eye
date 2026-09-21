@@ -11,12 +11,41 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem 1.25rem;
-  padding: 1.5rem 0 1.25rem;
+  gap: 0.9rem 1rem;
+  padding: 1.25rem 0 1rem;
 }
 
-.hero__copy { flex: 1 1 16rem; }
-.hero__actions { margin-left: auto; }
+.hero__copy { flex: 0 1 auto; }
+
+/*
+ * Stacked rather than side by side: two buttons in a row want 300px of the
+ * band, and that width is worth more to the filters beside them.
+ */
+.hero__actions {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: center;
+  margin-left: auto;
+  gap: 0.4rem;
+}
+
+.hero__actions .btn {
+  padding: 0.42rem 0.8rem;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+/*
+ * The filters live in the masthead rather than under it. That band was empty
+ * between the title and the buttons, and the controls were sitting in a strip
+ * of their own that pushed the table down by its full height for no gain: the
+ * page now spends one band on identity, filters and actions together.
+ */
+.hero > .scan-filters {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
 
 .hero__eyebrow {
   margin: 0 0 0.2rem;
@@ -116,9 +145,9 @@
 .quick-scan {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem 1.1rem;
+  gap: 0.5rem 0.9rem;
   align-items: flex-end;
-  padding: 0.85rem 1rem;
+  padding: 0.7rem 0.85rem;
 }
 
 .quick-scan__group { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -236,6 +265,8 @@
   margin-left: auto;
 }
 
+.quick-scan__group--actions .btn { padding: 0.32rem 0.7rem; font-size: 0.8rem; }
+
 .home-results {
   margin-top: 0.9rem;
   padding: 0;
@@ -311,6 +342,11 @@
 
 /* The filter form folds away where vertical space is scarce. */
 .scan-filters { border: 0; }
+
+/* In the masthead the form is simply open; the summary is the phone's affordance. */
+@media (min-width: 761px) {
+  .hero > .scan-filters > .scan-filters__summary { display: none; }
+}
 
 .scan-filters__summary {
   display: flex;

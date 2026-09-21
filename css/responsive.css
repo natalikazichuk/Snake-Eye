@@ -35,10 +35,12 @@
 
   .site-header__inner { flex-wrap: wrap; gap: 0.5rem; padding: 0.7rem 0; }
   .site-nav { width: 100%; justify-content: space-between; gap: 0.15rem; }
-  .site-nav a { padding: 0.45rem 0.55rem; font-size: 0.85rem; }
+  /* Five items now; a little less each keeps them on one line. */
+  .site-nav a { padding: 0.4rem 0.45rem; font-size: 0.8rem; }
 
-  /* Below this width the buttons get their own row and share it evenly. */
-  .hero__actions { margin-left: 0; width: 100%; }
+  /* Below this width the buttons get their own row and share it evenly. The
+     column stacking that buys width in the masthead buys nothing here. */
+  .hero__actions { flex-direction: row; margin-left: 0; width: 100%; }
   .hero__actions .btn { flex: 1 1 auto; }
   .hero__logo { width: 84px; }
   .hero__title { font-size: 1.55rem; }

@@ -70,68 +70,62 @@
         <h1 class="hero__title">SNAKE <span>&#128065;</span> EYE</h1>
         <p class="hero__slogan">See the market. Find the target.</p>
       </div>
+      <details class="scan-filters" id="scan-filters">
+          <summary class="scan-filters__summary">
+            <span>Filters</span>
+            <span class="scan-filters__count" id="scan-filters-count">none active</span>
+          </summary>
+          <form class="quick-scan panel" id="quick-scan">
+          <fieldset class="quick-scan__group">
+            <legend class="field__label">Exchange</legend>
+            <div class="check-grid">
+              <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" /> NASDAQ</label>
+              <label class="check"><input type="checkbox" name="exchanges" value="NYSE" /> NYSE</label>
+            </div>
+          </fieldset>
+
+          <fieldset class="quick-scan__group">
+            <legend class="field__label">Price</legend>
+            <div class="field-row">
+              <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" placeholder="2" /></label>
+              <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" placeholder="30" /></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="quick-scan__group">
+            <legend class="field__label">Volume</legend>
+            <div class="field-row">
+              <label class="field"><span class="field__label">Avg volume &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" placeholder="500000" /></label>
+              <label class="field"><span class="field__label">Rel. volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" placeholder="1.5" /></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="quick-scan__group">
+            <legend class="field__label">RSI</legend>
+            <div class="field-row">
+              <label class="field"><span class="field__label">Min</span><input type="number" name="rsiMin" min="0" max="100" placeholder="40" /></label>
+              <label class="field"><span class="field__label">Max</span><input type="number" name="rsiMax" min="0" max="100" placeholder="70" /></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="quick-scan__group quick-scan__group--actions">
+            <button class="btn btn--ghost btn--sm" type="button" id="quick-scan-reset">Reset filters</button>
+            </fieldset>
+          </form>
+        </details>
       <div class="hero__actions">
         <a class="btn btn--primary" href="pages/scanner.html">&#128013; Full scanner</a>
         <a class="btn btn--ghost" href="#how">How it works</a>
       </div>
     </section>
 
-    <section class="section section--flush" aria-labelledby="quick-scan-title">
-      <div class="scan-head">
-        <h2 id="quick-scan-title">Scan</h2>
-        <p class="scan-head__hint">
-          Every field is optional — an empty form scans everything. Results update as you type.
-        </p>
-        <span class="panel__meta" id="home-data-stamp" data-source-stamp>loading&#8230;</span>
-      </div>
-
-      <details class="scan-filters" id="scan-filters">
-        <summary class="scan-filters__summary">
-          <span>Filters</span>
-          <span class="scan-filters__count" id="scan-filters-count">none active</span>
-        </summary>
-        <form class="quick-scan panel" id="quick-scan">
-        <fieldset class="quick-scan__group">
-          <legend class="field__label">Exchange</legend>
-          <div class="check-grid">
-            <label class="check"><input type="checkbox" name="exchanges" value="NASDAQ" /> NASDAQ</label>
-            <label class="check"><input type="checkbox" name="exchanges" value="NYSE" /> NYSE</label>
-          </div>
-        </fieldset>
-
-        <fieldset class="quick-scan__group">
-          <legend class="field__label">Price</legend>
-          <div class="field-row">
-            <label class="field"><span class="field__label">Min $</span><input type="number" name="priceMin" min="0" step="0.5" placeholder="2" /></label>
-            <label class="field"><span class="field__label">Max $</span><input type="number" name="priceMax" min="0" step="0.5" placeholder="30" /></label>
-          </div>
-        </fieldset>
-
-        <fieldset class="quick-scan__group">
-          <legend class="field__label">Volume</legend>
-          <div class="field-row">
-            <label class="field"><span class="field__label">Avg volume &gt;</span><input type="number" name="avgVolumeMin" min="0" step="50000" placeholder="500000" /></label>
-            <label class="field"><span class="field__label">Rel. volume &gt;</span><input type="number" name="relVolumeMin" min="0" step="0.1" placeholder="1.5" /></label>
-          </div>
-        </fieldset>
-
-        <fieldset class="quick-scan__group">
-          <legend class="field__label">RSI</legend>
-          <div class="field-row">
-            <label class="field"><span class="field__label">Min</span><input type="number" name="rsiMin" min="0" max="100" placeholder="40" /></label>
-            <label class="field"><span class="field__label">Max</span><input type="number" name="rsiMax" min="0" max="100" placeholder="70" /></label>
-          </div>
-        </fieldset>
-
-        <fieldset class="quick-scan__group quick-scan__group--actions">
-          <button class="btn btn--ghost btn--sm" type="button" id="quick-scan-reset">Reset filters</button>
-          </fieldset>
-        </form>
-      </details>
+    <section class="section section--flush" aria-labelledby="home-results-title">
 
       <div class="home-results panel" id="home-results">
+        <h2 class="visually-hidden" id="home-results-title">Scan results</h2>
         <div class="home-results__head">
           <span class="home-results__count" id="home-results-count">scanning&#8230;</span>
+          <span class="panel__meta" id="home-data-stamp" data-source-stamp>loading&#8230;</span>
           <a class="home-results__more" id="home-results-more" href="pages/scanner.html" hidden></a>
         </div>
         <table class="home-results__table">

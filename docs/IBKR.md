@@ -228,6 +228,32 @@ sanity check : AAPL last volume 17,828,882
 Compare that with the volume your broker or any quote page shows for the same
 session. If it is 100x off, re-run with `--volume-factor 1`.
 
+### The scan list is yours, not your portfolio
+
+`config/universe.json` decides what the ingest pulls. Snake Eye never reads your
+holdings on its own — it does not look at your account unless you ask it to.
+
+```bash
+npm run universe                       # the list, and what the data file holds
+npm run universe -- --add SMC,AAPL
+npm run universe -- --remove NIO,GRAB
+npm run universe -- --clear
+npm run universe -- --from-portfolio   # replace it with your IBKR stock positions
+npm run universe -- --prune-data       # drop data rows no longer on the list
+```
+
+Editing the list changes nothing by itself; `npm run ingest` pulls the data for
+it. The exception is `--prune-data`, which removes rows from
+`data/stocks.local.json` so the site stops showing symbols you dropped —
+without spending a single request to rebuild the file.
+
+Run on its own, the command compares the two and says which symbols are listed
+but not pulled, and which are pulled but no longer listed.
+
+`--from-portfolio` keeps only stock positions with a non-zero size: options and
+futures lines would arrive as instruments the rest of the pipeline cannot
+price.
+
 ### One symbol, on demand
 
 Re-running the whole universe to look at a single ticker is a poor trade — it
