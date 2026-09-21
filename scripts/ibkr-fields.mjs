@@ -89,7 +89,10 @@ function request(url, { timeout = 15000 } = {}) {
 }
 
 async function resolveConid(gateway, symbol) {
-  const rows = await request(`${gateway}/v1/api/iserver/secdef/search?symbol=${symbol}&name=false&secType=STK`);
+  const rows = await request(
+    `${gateway}/v1/api/iserver/secdef/search?symbol=${symbol}&name=false&secType=STK`,
+    { timeout: 10000 },
+  );
   const contract = pickContract(rows, symbol);
   if (!contract) throw new Error(`No US stock contract for ${symbol}`);
   return contract;
@@ -102,22 +105,31 @@ async function main() {
     return;
   }
 
+  // Print before touching the network. A contract lookup against a sleeping
+  // gateway can sit for its full timeout, and a script that prints nothing for
+  // fifteen seconds is indistinguishable from one that did not start.
+  console.log(`\nSnake Eye — snapshot field probe`);
+  console.log(`  gateway  : ${options.gateway}`);
+  console.log(`  fields   : ${options.from}–${options.to}`);
+  console.log(`  polls    : up to ${options.polls}, 1.2s apart`);
+
   let label = options.symbol;
   let conid = options.conid;
   if (!conid) {
+    process.stdout.write(`  contract : resolving ${options.symbol} ... `);
     const contract = await resolveConid(options.gateway, options.symbol);
     conid = contract.conid;
     label = `${contract.ticker} — ${contract.name}`;
+    console.log(`${label} (conid ${conid})`);
+  } else {
+    console.log(`  contract : conid ${conid}`);
   }
+  console.log('');
 
   const ids = [];
   for (let id = options.from; id <= options.to; id += 1) ids.push(String(id));
 
   const url = `${options.gateway}/v1/api/iserver/marketdata/snapshot?conids=${conid}&fields=${ids.join(',')}`;
-  console.log(`\nSnake Eye — snapshot field probe`);
-  console.log(`  contract : ${label} (conid ${conid})`);
-  console.log(`  fields   : ${options.from}–${options.to}`);
-  console.log(`  polls    : up to ${options.polls}, 1.2s apart\n`);
 
   const merged = {};
   const firstSeenAt = {};
@@ -172,6 +184,11 @@ main().catch((error) => {
   console.error(`\n✗ ${error.message}`);
   if (error.status === 403) {
     console.error('  403 means the gateway is running but not logged in — open https://localhost:5000');
+  } else if (error.code === 'ECONNREFUSED') {
+    console.error('  Nothing is listening there — start the gateway first, then npm run gateway');
+  } else if (/Timeout/.test(error.message)) {
+    console.error('  The gateway accepted the connection but never answered. An idle session');
+    console.error('  goes to sleep: reload https://localhost:5000 and run npm run gateway.');
   }
   process.exitCode = 1;
 });
