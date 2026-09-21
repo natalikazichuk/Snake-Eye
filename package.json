@@ -11,6 +11,7 @@
     "fields": "node scripts/ibkr-fields.mjs",
     "keepalive": "node scripts/gateway-keepalive.mjs",
     "ingest": "node scripts/ibkr-ingest.mjs",
+    "ticker": "node scripts/ticker.mjs",
     "fundamentals": "node scripts/sec-ingest.mjs",
     "demo-data": "node scripts/generate-stocks.mjs"
   },
