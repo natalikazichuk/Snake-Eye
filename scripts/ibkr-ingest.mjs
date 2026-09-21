@@ -38,6 +38,7 @@ import {
   FULL_BARS,
   MIN_BARS,
   SNAPSHOT_FIELDS,
+  SNAPSHOT_FUNDAMENTAL_FIELDS,
   buildPayload,
   buildStockRecord,
   countsAsFundamentals,
@@ -430,8 +431,21 @@ async function fetchRefinitiv(gateway, conid) {
  * fills what is left, which on an account without that entitlement is still
  * market cap, P/E and EPS.
  */
+/**
+ * Tallied across the whole run so the summary can tell "asked wrongly" from
+ * "not entitled". One symbol proves nothing — a company can genuinely lack a
+ * P/E. Every symbol in the universe missing the same three fields, across ten
+ * polls each, is the entitlement.
+ */
+const feedReport = { snapshotFundamentals: false, refinitivAnswered: false };
+
 async function fetchFundamentals(gateway, conid, { debug = false } = {}) {
   const [refinitiv, snapshot] = [await fetchRefinitiv(gateway, conid), await fetchSnapshot(gateway, conid)];
+
+  if (refinitiv.path) feedReport.refinitivAnswered = true;
+  if (SNAPSHOT_FUNDAMENTAL_FIELDS.some((id) => snapshot.raw?.[id] !== undefined)) {
+    feedReport.snapshotFundamentals = true;
+  }
 
   const merged = { ...snapshot.data };
   for (const [key, value] of Object.entries(refinitiv.data)) {
@@ -563,8 +577,24 @@ async function main() {
   console.log(`   sessions      : ${payload.meta.firstSession} → ${payload.meta.lastSession}`);
   console.log(`   fundamentals  : ${withFundamentals}/${stocks.length} symbols (${withRatios} with revenue and margins)`);
   if (options.fundamentals && withFundamentals === 0) {
-    console.log('                   none came back — re-run with --debug to see what the');
-    console.log('                   gateway answers, or fill them from SEC: npm run fundamentals');
+    if (!feedReport.snapshotFundamentals && !feedReport.refinitivAnswered) {
+      console.log('');
+      console.log('   The gateway never sent market cap, P/E or EPS for any symbol, and no');
+      console.log('   Refinitiv path answered. Those come from the fundamentals feed, not the');
+      console.log('   price feed, so this is the entitlement rather than a request asked wrongly.');
+      console.log('');
+      console.log('   Switch it on (free for IBKR clients, but off by default):');
+      console.log('     Client Portal -> Settings -> Account Settings -> Market Data Subscriptions');
+      console.log('     -> Reuters/Refinitiv Worldwide Fundamentals');
+      console.log('   Then restart the gateway and log in again. A paper account does not always');
+      console.log('   mirror the live account\'s entitlements.');
+      console.log('');
+      console.log('   Meanwhile, the filings themselves are free and need no account:');
+      console.log('     npm run fundamentals -- --contact you@example.com');
+    } else {
+      console.log('                   none came back — re-run with --debug to see what the');
+      console.log('                   gateway answers, or fill them from SEC: npm run fundamentals');
+    }
   }
   console.log(`   sanity check  : ${stocks[0].ticker} last volume ${sampleVolume.toLocaleString('en-US')}`);
   console.log(`                   if that is 100x off, re-run with --volume-factor ${options.volumeFactor === 100 ? 1 : 100}`);

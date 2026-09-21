@@ -171,14 +171,32 @@ export function parseIbkrNumber(value) {
  * entitlement, so it is worth asking for even when the fundamentals endpoints
  * answer.
  */
+/**
+ * Snapshot field ids, confirmed against a live gateway with
+ * `npm run fields`. 7280 and 7281 both answer with the sector string;
+ * 7282 is the 90-day average volume, not the "Category" the public list
+ * suggests.
+ *
+ * 7289/7290/7291 are served from the fundamentals feed rather than the price
+ * feed, so an account without the Refinitiv entitlement never receives them —
+ * they do not arrive late, they do not arrive at all. See
+ * SNAPSHOT_FUNDAMENTAL_FIELDS below.
+ */
 export const SNAPSHOT_FIELDS = {
   7289: 'marketCap',
   7290: 'pe',
   7291: 'eps',
   7287: 'dividendYield',
   7282: 'avgVolume90d',
-  7281: 'industry',
+  7280: 'industry',
 };
+
+/**
+ * The subset that only an entitled account receives. When none of these ever
+ * arrive across every symbol in a run, that is the entitlement talking — not a
+ * poll that gave up too early.
+ */
+export const SNAPSHOT_FUNDAMENTAL_FIELDS = ['7289', '7290', '7291'];
 
 /** Fields that are labels rather than numbers. */
 const SNAPSHOT_TEXT_FIELDS = new Set(['industry']);

@@ -188,7 +188,7 @@ test('treats IBKR\'s empty markers as no data', () => {
 
 test('maps snapshot field numbers onto the app\'s fields', () => {
   const snapshot = normalizeSnapshot({
-    conid: 265598, '7289': '3.4T', '7290': '34.1', '7291': '6.42', '7287': '0.4', '7281': 'Technology',
+    conid: 265598, '7289': '3.4T', '7290': '34.1', '7291': '6.42', '7287': '0.4', '7280': 'Technology',
   });
   assert.equal(snapshot.marketCap, 3.4e12);
   assert.equal(snapshot.pe, 34.1);
@@ -208,7 +208,7 @@ test('the exact value beside an abbreviated one wins', () => {
   // A real PLUG snapshot: the gateway rounds the label to three significant
   // digits and puts the exact figure in the `_raw` companion.
   const snapshot = normalizeSnapshot({
-    conid: 88385302, '7281': 'Energy-Alternate Sources',
+    conid: 88385302, '7280': 'Energy-Alternate Sources',
     '7282': '54.6M', '7282_raw': 54637812,
   });
   assert.equal(snapshot.avgVolume90d, 54637812, 'not 54600000 from the label');
