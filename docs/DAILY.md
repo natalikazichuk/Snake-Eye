@@ -6,6 +6,32 @@ when you refresh it.
 
 ---
 
+## Adding a symbol from the page
+
+`npm start` runs a small local server rather than a plain file server, and that
+server can do the one thing a static site cannot: reach the gateway. **My
+tickers** therefore carries a box — type a ticker, press Pull, and the symbol is
+fetched, scored and added to the table without touching a terminal.
+
+It needs the gateway running and logged in, exactly as `npm run ingest` does.
+The box says which of the two is missing rather than failing silently, and
+reports what it pulled:
+
+```
+SMC — SUMMIT MIDSTREAM CORP · NYSE · 260 bars · score 50
+```
+
+The first pull after starting the server takes about eight seconds; later ones
+take two. The difference is the market data snapshot, which is polled until the
+fundamental fields arrive — once a full poll has established that this account
+never receives them, the rest stop waiting.
+
+The box does not appear on the GitHub Pages copy of the site. There is no server
+behind that page, and a control that cannot work is worse than none.
+
+`npm run serve` starts the same server with the API switched off, if you want a
+plain file server.
+
 ## Just looking — one window
 
 Nothing is being pulled, so the gateway is not needed at all.
@@ -17,7 +43,8 @@ cd /d %USERPROFILE%\Snake-Eye
 npm start
 ```
 
-Leave it open; that window *is* the web server. Then in the browser:
+Leave it open; that window *is* the web server. It prints every address it is
+listening on, including the one a phone on the same Wi-Fi can use. Then in the browser:
 
 **http://localhost:8080**
 

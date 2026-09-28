@@ -272,7 +272,21 @@ export async function lookupExchange(gateway, symbol) {
  * response may be absent from the next.
  */
 const SNAPSHOT_ATTEMPTS = 8;
+const SNAPSHOT_SHORT_ATTEMPTS = 3;
 const SNAPSHOT_GAP_MS = 1200;
+
+/**
+ * Whether this account's feed has ever delivered the fundamental field ids.
+ *
+ * null until a full-length poll has settled it. Waiting eight polls for fields
+ * an unentitled account will never send costs about eight seconds per symbol -
+ * unnoticeable in a batch ingest, and most of the wait when someone types a
+ * ticker into the page and watches. Once a full run has proved they do not
+ * arrive, later symbols in the same process stop waiting for them. A long-lived
+ * server restarts to re-learn this, which is the right cadence for something
+ * that changes when a subscription is switched on.
+ */
+let snapshotFundamentalsSeen = null;
 
 export async function fetchSnapshot(gateway, conid) {
   const ids = Object.keys(SNAPSHOT_FIELDS);
@@ -280,7 +294,9 @@ export async function fetchSnapshot(gateway, conid) {
   const merged = {};
   let attempts = 0;
 
-  for (let i = 0; i < SNAPSHOT_ATTEMPTS; i += 1) {
+  const limit = snapshotFundamentalsSeen === false ? SNAPSHOT_SHORT_ATTEMPTS : SNAPSHOT_ATTEMPTS;
+
+  for (let i = 0; i < limit; i += 1) {
     attempts = i + 1;
     let rows = null;
     try {
@@ -292,8 +308,12 @@ export async function fetchSnapshot(gateway, conid) {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row && typeof row === 'object') Object.assign(merged, row);
     if (ids.every((id) => merged[id] !== undefined)) break;
-    if (i < SNAPSHOT_ATTEMPTS - 1) await sleep(SNAPSHOT_GAP_MS);
+    if (i < limit - 1) await sleep(SNAPSHOT_GAP_MS);
   }
+
+  const gotFundamentals = SNAPSHOT_FUNDAMENTAL_FIELDS.some((id) => merged[id] !== undefined);
+  if (gotFundamentals) snapshotFundamentalsSeen = true;
+  else if (limit === SNAPSHOT_ATTEMPTS) snapshotFundamentalsSeen = false;
 
   const missing = ids.filter((id) => merged[id] === undefined);
   return { data: normalizeSnapshot(merged), raw: merged, attempts, missing };

@@ -23,31 +23,10 @@
  *   --debug           print what the gateway answered
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-import {
-  FULL_BARS,
-  MIN_BARS,
-  buildStockRecord,
-  countsAsFundamentals,
-  normalizeHistory,
-} from './lib/ibkr-normalize.mjs';
-import {
-  checkAuth,
-  fetchFundamentals,
-  fetchHistory,
-  initSession,
-  lookupExchange,
-  resolveContract,
-  resolveGateway,
-  withRetry,
-} from './lib/ibkr-client.mjs';
-import { analyze } from '../js/indicators.js';
-import { scoreStock } from '../js/score.js';
+import { FULL_BARS, countsAsFundamentals } from './lib/ibkr-normalize.mjs';
+import { mergeIntoFile, normalizeSymbol, pullSymbol } from './lib/pull-symbol.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /* ------------------------------------------------------------------ colour */
 
@@ -192,46 +171,6 @@ function printReport(row, { contract, bars, saved, file }) {
 
 /* -------------------------------------------------------------------- save */
 
-/**
- * Merge one symbol into the data file, replacing any earlier copy of it. The
- * file may not exist yet — pulling one ticker before any bulk ingest is a
- * reasonable way to start.
- */
-async function save(record, { file, barSize }) {
-  const path = resolve(ROOT, file);
-  let payload = null;
-
-  try {
-    payload = JSON.parse(await readFile(path, 'utf8'));
-  } catch {
-    payload = { meta: { source: 'ibkr', synthetic: false, barSize }, stocks: [] };
-  }
-  if (!Array.isArray(payload.stocks)) payload.stocks = [];
-
-  const index = payload.stocks.findIndex((s) => s.ticker === record.ticker);
-  if (index === -1) payload.stocks.push(record);
-  else payload.stocks[index] = record;
-
-  const sessions = payload.stocks
-    .map((s) => s.history?.dates?.at(-1))
-    .filter(Boolean)
-    .sort();
-  payload.meta = {
-    ...payload.meta,
-    generated: new Date().toISOString().slice(0, 10),
-    barSize: payload.meta?.barSize || barSize,
-    firstSession: payload.stocks
-      .map((s) => s.history?.dates?.[0])
-      .filter(Boolean)
-      .sort()[0] || null,
-    lastSession: sessions.at(-1) || null,
-  };
-
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(payload)}\n`);
-  return payload.stocks.length;
-}
-
 /* -------------------------------------------------------------------- main */
 
 async function main() {
@@ -242,54 +181,25 @@ async function main() {
     return;
   }
 
-  options.gateway = await resolveGateway(options.gateway);
-  await withRetry('auth', () => checkAuth(options.gateway));
-  await initSession(options.gateway);
-
-  const contract = await resolveContract(options.gateway, options.symbol, { debug: options.debug });
-  if (!contract) {
-    throw new Error(`No US stock contract for ${options.symbol}. Check the ticker, or try --debug.`);
+  const symbol = normalizeSymbol(options.symbol);
+  if (!symbol) {
+    throw new Error(`"${options.symbol}" is not a ticker. Letters and dots, up to six.`);
   }
 
-  // Printed before the history request, not after: a ticker can collide with a
-  // futures or index contract of the same letters, and seeing which one was
-  // chosen turns an opaque HTTP 500 into an obvious wrong pick.
-  console.log(dim(`  ${contract.ticker} → ${contract.name} · ${contract.exchange || 'exchange unknown'} · conid ${contract.conid}`));
-
-  const raw = await withRetry(`history ${options.symbol}`, () =>
-    fetchHistory(options.gateway, contract.conid, options));
-  const history = normalizeHistory(raw, { volumeFactor: options.volumeFactor });
-
-  if (!history || history.close.length < MIN_BARS) {
-    throw new Error(
-      `Only ${history?.close.length ?? 0} bars for ${options.symbol}; `
-      + `${MIN_BARS} are needed before the indicators mean anything.`,
-    );
-  }
-
-  if (!contract.exchange) {
-    contract.exchange = await lookupExchange(options.gateway, options.symbol);
-  }
-
-  const fundamentals = await fetchFundamentals(options.gateway, contract.conid, { debug: options.debug });
-  const record = buildStockRecord({ contract, history, fundamentals });
-
-  // Scored by the browser's own modules, so this number and the site's are the
-  // same number rather than two implementations that agree for now.
-  const row = {
-    ticker: record.ticker,
-    name: record.name,
-    exchange: (record.exchange || 'UNKNOWN').toUpperCase(),
-    sector: record.sector,
-    fundamentals: record.fundamentals || {},
-    metrics: analyze(record.history),
-    dates: record.history.dates,
+  // Printed as the pull reaches each step, not after: a ticker can collide with
+  // a futures or index contract of the same letters, and seeing which contract
+  // was chosen turns an opaque HTTP 500 into an obvious wrong pick.
+  const onStep = (step, contract) => {
+    if (step === 'history' && contract) {
+      console.log(dim(`  ${contract.ticker} → ${contract.name} · ${contract.exchange || 'exchange unknown'} · conid ${contract.conid}`));
+    }
   };
-  row.score = scoreStock(row);
+
+  const { contract, record, row, bars } = await pullSymbol(symbol, { ...options, onStep });
 
   let saved = false;
   if (options.save) {
-    await save(record, { file: options.file, barSize: options.bar });
+    await mergeIntoFile(record, { file: options.file, barSize: options.bar });
     saved = true;
   }
 
@@ -297,20 +207,15 @@ async function main() {
     console.log(JSON.stringify({
       ticker: row.ticker, name: row.name, exchange: row.exchange,
       price: row.metrics.price, changePercent: row.metrics.changePercent,
-      score: row.score, fundamentals: row.fundamentals, bars: history.close.length,
+      score: row.score, fundamentals: row.fundamentals, bars,
       lastSession: row.dates.at(-1), saved,
     }, null, 2));
     return;
   }
 
-  printReport(row, {
-    contract,
-    bars: history.close.length,
-    saved,
-    file: options.file,
-  });
+  printReport(row, { contract, bars, saved, file: options.file });
 
-  if (history.close.length < FULL_BARS) {
+  if (bars < FULL_BARS) {
     console.log(dim(`  Fewer than ${FULL_BARS} bars, so SMA200 is not available yet.`));
     console.log('');
   }

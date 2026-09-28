@@ -68,6 +68,12 @@ says so in a banner rather than hanging, but it still will not run.
 npm start        # then http://localhost:8080
 ```
 
+`npm start` is a small local server, not a file server: it also exposes the one
+endpoint a static site cannot have. **My tickers** has a box that takes a ticker,
+pulls it from the gateway, scores it and adds it to the table — the same code
+`npm run ticker` runs, so the numbers match. The box only appears where that
+server is answering, so the GitHub Pages copy never shows it.
+
 To refresh the data, the gateway has to be running and logged in first.
 **[docs/DAILY.md](docs/DAILY.md)** has the window-by-window routine and a table
 of what every error message means.
@@ -84,8 +90,9 @@ npm run fundamentals -- --contact you@example.com
 
 | | |
 |---|---|
-| `npm start` | serve the site on `http://localhost:8080` |
-| `npm test` | 62 tests — indicator maths, filters, IBKR and SEC mapping |
+| `npm start` | serve the site, and let the page pull symbols from IBKR |
+| `npm run serve` | the same server with the API off — a plain file server |
+| `npm test` | 69 tests — indicator maths, filters, IBKR and SEC mapping, the data file |
 | `npm run gateway` | diagnose the gateway: not listening, not logged in, or ready |
 | `npm run keepalive` | hold the IBKR session open in its own window |
 | `npm run ingest` | pull daily bars for the whole list |

@@ -64,6 +64,28 @@
       <span class="panel__meta" data-source-stamp>loading&#8230;</span>
     </div>
 
+    <!--
+      Hidden until the API answers. On GitHub Pages there is no server behind
+      this page, and a box that cannot do anything is worse than no box.
+    -->
+    <form class="ticker-add" id="ticker-add" hidden>
+      <label class="ticker-add__field">
+        <span class="field__label">Pull a symbol from Interactive Brokers</span>
+        <input
+          type="text"
+          id="ticker-add-input"
+          name="symbol"
+          placeholder="PLUG"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          maxlength="6"
+        />
+      </label>
+      <button class="btn btn--primary" type="submit" id="ticker-add-button">Pull</button>
+      <span class="ticker-add__status" id="ticker-add-status" role="status"></span>
+    </form>
+
     <div class="universe-summary" id="universe-summary"></div>
 
     <section class="panel universe-panel" id="universe-panel" aria-labelledby="universe-title">

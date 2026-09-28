@@ -31,6 +31,14 @@ import {
 /** The personal scan list, alongside what actually came back for it. */
 const UNIVERSE_CONFIG_URL = new URL('../config/universe.json', import.meta.url);
 
+/*
+ * Resolved against this module rather than the page. A relative 'api/status'
+ * reads as /pages/api/status from pages/universe.html, which is nothing: the
+ * form then stayed hidden on the one page it belongs to.
+ */
+const API_STATUS_URL = new URL('../api/status', import.meta.url);
+const API_TICKER_URL = new URL('../api/ticker', import.meta.url);
+
 function scorePill(row) {
   return el('span', {
     className: `score-pill tone-${row.score.tone}`,
@@ -145,19 +153,102 @@ async function renderMissing(rows) {
   );
 }
 
+/* ------------------------------------------------------------ pull a symbol */
+
+/**
+ * The box only appears when something can answer it.
+ *
+ * The page is also served statically from GitHub Pages, where there is no
+ * server to pull anything; offering a control that cannot work is worse than
+ * offering none. So the form stays hidden until /api/status replies, and says
+ * what is wrong when the gateway is reachable but not ready.
+ */
+async function initTickerBox(reload) {
+  const form = qs('#ticker-add');
+  const input = qs('#ticker-add-input');
+  const button = qs('#ticker-add-button');
+  const status = qs('#ticker-add-status');
+  if (!form || !input) return;
+
+  let state;
+  try {
+    const response = await fetch(API_STATUS_URL);
+    if (!response.ok) return;
+    state = await response.json();
+  } catch {
+    return; // no local server — leave the form hidden
+  }
+
+  form.hidden = false;
+
+  const setStatus = (text, tone = '') => {
+    status.textContent = text;
+    status.className = `ticker-add__status ${tone}`;
+  };
+
+  if (state.gateway !== 'ready') {
+    setStatus(state.gateway === 'not-logged-in'
+      ? 'Gateway running but not logged in — open https://localhost:5000'
+      : 'Gateway not running — start it, then reload', 'is-warn');
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const symbol = input.value.trim().toUpperCase();
+    if (!symbol) return;
+
+    input.disabled = true;
+    button.disabled = true;
+    setStatus(`Pulling ${symbol}…`);
+
+    try {
+      const response = await fetch(API_TICKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setStatus(result.hint ? `${result.error} ${result.hint}` : result.error, 'is-error');
+        return;
+      }
+
+      setStatus(
+        `${result.ticker} — ${result.name} · ${result.exchange} · ${result.bars} bars · score ${result.score}`
+        + (result.replaced ? ' (updated)' : ''),
+        'is-ok',
+      );
+      input.value = '';
+      await reload();
+    } catch (error) {
+      setStatus(error.message, 'is-error');
+    } finally {
+      input.disabled = false;
+      button.disabled = false;
+      input.focus();
+    }
+  });
+}
+
 async function init() {
   const panel = qs('#universe-panel');
   if (!panel) return;
 
-  try {
-    const { rows, meta } = await loadUniverse();
+  async function render() {
+    // Bypass the cache: the file changed on disk a moment ago.
+    const { rows, meta } = await loadUniverse({ fresh: true });
 
     renderSourceInfo(meta, rows.length);
     renderSummary(rows, meta);
     qs('#universe-body').replaceChildren(...renderRows(rows));
     qs('#universe-count').textContent = `${rows.length} symbols, highest score first`;
-
     await renderMissing(rows);
+  }
+
+  try {
+    await render();
+    await initTickerBox(render);
   } catch (error) {
     renderError(panel, error);
   }
