@@ -106,3 +106,50 @@
 @media (max-width: 720px) {
   .universe-table .col-fund { display: none; }
 }
+
+/* ------------------------------------------------------------- pull a symbol */
+
+/* `display` on a class beats the `hidden` attribute, so say so explicitly —
+   otherwise the form shows on GitHub Pages, where nothing can answer it. */
+.ticker-add[hidden] { display: none; }
+
+.ticker-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 0.9rem;
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ticker-add__field { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.ticker-add input {
+  width: 8rem;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+
+.ticker-add .btn { padding: 0.42rem 1rem; }
+.ticker-add input:disabled { opacity: 0.5; }
+
+.ticker-add__status {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.ticker-add__status.is-ok { color: var(--accent); }
+.ticker-add__status.is-warn { color: var(--warn); }
+.ticker-add__status.is-error { color: var(--down); }
+
+@media (max-width: 560px) {
+  .ticker-add input { width: 100%; }
+  .ticker-add__field { flex: 1 1 100%; }
+}

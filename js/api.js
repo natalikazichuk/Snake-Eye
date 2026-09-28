@@ -137,8 +137,15 @@ export function describeSource(meta, symbolCount) {
   return parts.join(' · ');
 }
 
-/** Load (and cache) the scored universe. */
-export function loadUniverse() {
+/**
+ * Load (and cache) the scored universe.
+ *
+ * `fresh` drops the cache, for the one case where the file changed underneath
+ * the page: a symbol was just pulled through the local API and the table has to
+ * show it without a reload.
+ */
+export function loadUniverse({ fresh = false } = {}) {
+  if (fresh) universePromise = null;
   if (!universePromise) {
     universePromise = fetchUniverse().catch((error) => {
       universePromise = null; // let a later call retry instead of caching the failure
