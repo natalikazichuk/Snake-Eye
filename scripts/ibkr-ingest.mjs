@@ -22,6 +22,8 @@
  *   --volume-factor <n>   see docs/IBKR.md      (default 100)
  *   --delay <ms>          pause between calls   (default 1200)
  *   --limit <n>           only the first n symbols (a quick smoke test)
+ *   --fresh-days <n>      skip symbols not traded in n days (default 7)
+ *   --include-stale       keep symbols that have stopped trading
  *   --no-fundamentals     skip the fundamentals request entirely
  *   --dry-run             resolve nothing, just print the plan
  *
@@ -32,8 +34,10 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  FRESH_DAYS,
   FULL_BARS,
   MIN_BARS,
+  daysSinceLastBar,
   buildPayload,
   buildStockRecord,
   countsAsFundamentals,
@@ -66,6 +70,7 @@ function parseArgs(argv) {
     volumeFactor: 100,
     delay: 1200,
     limit: null,
+    freshDays: FRESH_DAYS,
     fundamentals: true,
     dryRun: false,
     debug: false,
@@ -83,6 +88,8 @@ function parseArgs(argv) {
       case '--volume-factor': options.volumeFactor = Number(next()); break;
       case '--delay': options.delay = Number(next()); break;
       case '--limit': options.limit = Number(next()); break;
+      case '--fresh-days': options.freshDays = Number(next()); break;
+      case '--include-stale': options.freshDays = 0; break;
       case '--no-fundamentals': options.fundamentals = false; break;
       case '--dry-run': options.dryRun = true; break;
       case '--debug': options.debug = true; break;
@@ -98,6 +105,10 @@ function parseArgs(argv) {
         }
     }
   }
+  if (!Number.isFinite(options.freshDays) || options.freshDays < 0) {
+    console.error('--fresh-days needs a number of days, e.g. --fresh-days 7');
+    process.exit(1);
+  }
   return options;
 }
 
@@ -112,6 +123,8 @@ const HELP = `Snake Eye — IBKR ingest
   --volume-factor <n>  lots -> shares (default 100, see docs/IBKR.md)
   --delay <ms>         pause between requests (default 1200)
   --limit <n>          only the first n symbols
+  --fresh-days <n>     skip symbols whose last bar is older than n days (default ${FRESH_DAYS})
+  --include-stale      keep them anyway
   --no-fundamentals    skip fundamentals
   --dry-run            print the plan without calling the gateway
   --debug              print the raw gateway reply when a symbol cannot be resolved
@@ -180,6 +193,15 @@ async function main() {
       if (!history || history.close.length < MIN_BARS) {
         skipped.push([symbol, `only ${history?.close.length ?? 0} bars`]);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (too little history)`);
+        continue;
+      }
+
+      // A suspended or delisted symbol still answers with history; it just
+      // stops. Scanning it would rank a stock nobody can trade.
+      const lag = daysSinceLastBar(history.dates.at(-1));
+      if (options.freshDays && lag !== null && lag > options.freshDays) {
+        skipped.push([symbol, `not trading: last bar ${history.dates.at(-1)}, ${lag} days ago`]);
+        console.log(`${position} ${symbol.padEnd(6)} — skipped (last traded ${history.dates.at(-1)})`);
         continue;
       }
 

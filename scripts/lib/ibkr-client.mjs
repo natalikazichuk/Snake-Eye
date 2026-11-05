@@ -434,6 +434,35 @@ export async function resolveConids(gateway, symbols, { venue = 'NYSE', batch = 
  * subscription, so each batch is polled a few times and the answers merged.
  */
 export async function fetchLastPrices(gateway, conids, { batch = 100, polls = 4, parse, onProgress } = {}) {
+  const prices = await snapshotPass(gateway, conids, { batch, polls, parse, onProgress });
+
+  // A real gateway left some liquid names (NIO, T, PBR) without a price on the
+  // first pass, clustered in the later batches. Give those a second try in
+  // small batches with longer polling, after the first pass's lines are closed.
+  const missing = conids.filter((conid) => prices.get(conid) === null);
+  if (missing.length) {
+    console.log(`\n  retrying ${missing.length} without a price, in smaller batches…`);
+    const retried = await snapshotPass(gateway, missing, { batch: 20, polls: 8, parse });
+    for (const [conid, price] of retried) if (price !== null) prices.set(conid, price);
+  }
+  return prices;
+}
+
+/**
+ * Each snapshot request opens a streaming subscription, and an account has a
+ * limited number of market data lines. Left open, the subscriptions from
+ * earlier batches use them up and later batches come back empty, so every
+ * batch closes them before the next one opens.
+ */
+async function unsubscribeAll(gateway) {
+  try {
+    await request(`${gateway}/v1/api/iserver/marketdata/unsubscribeall`, { timeout: 10000 });
+  } catch {
+    /* older builds lack the endpoint; the retry pass still covers the gap */
+  }
+}
+
+async function snapshotPass(gateway, conids, { batch, polls, parse, onProgress }) {
   const prices = new Map();
   for (let i = 0; i < conids.length; i += batch) {
     const chunk = conids.slice(i, i + batch);
@@ -460,6 +489,7 @@ export async function fetchLastPrices(gateway, conids, { batch = 100, polls = 4,
       const row = merged.get(conid) || {};
       prices.set(conid, parse(row['31']) ?? parse(row['7741']));
     }
+    await unsubscribeAll(gateway);
     onProgress?.(Math.min(i + batch, conids.length), conids.length);
   }
   return prices;
