@@ -390,6 +390,81 @@ export async function fetchFundamentals(gateway, conid, { debug = false } = {}) 
   return merged;
 }
 
+/* ------------------------------------------------------------ bulk prices */
+
+/**
+ * Contract ids for many symbols at once.
+ *
+ * `/trsrv/stocks` takes a comma-separated list, so a whole exchange resolves in
+ * a few dozen calls instead of one search per symbol. Only US listings are
+ * kept, and the venue the caller names (NYSE) wins over any other.
+ */
+export async function resolveConids(gateway, symbols, { venue = 'NYSE', batch = 50, onProgress } = {}) {
+  const conids = new Map();
+  for (let i = 0; i < symbols.length; i += batch) {
+    const chunk = symbols.slice(i, i + batch);
+    let payload = null;
+    try {
+      payload = await withRetry('trsrv/stocks', () => request(
+        `${gateway}/v1/api/trsrv/stocks?symbols=${chunk.map(encodeURIComponent).join(',')}`,
+        { timeout: 30000 },
+      ));
+    } catch {
+      /* a failed batch leaves those symbols unresolved; they are reported */
+    }
+
+    for (const symbol of chunk) {
+      const contracts = (payload?.[symbol] || []).flatMap((entry) => entry.contracts || []);
+      const us = contracts.filter((c) => c.isUS !== false && c.conid);
+      const pick = us.find((c) => String(c.exchange || '').toUpperCase() === venue) || us[0];
+      if (pick) conids.set(symbol, Number(pick.conid));
+    }
+    onProgress?.(Math.min(i + batch, symbols.length), symbols.length);
+    await sleep(250);
+  }
+  return conids;
+}
+
+/**
+ * Last price for many contracts at once, from the market data snapshot.
+ *
+ * Field 31 is the last trade (prefixed `C` when it is the previous close);
+ * 7741 is the prior close, used when 31 never arrives — outside market hours,
+ * or on a symbol that has not traded today. The first poll only opens the
+ * subscription, so each batch is polled a few times and the answers merged.
+ */
+export async function fetchLastPrices(gateway, conids, { batch = 100, polls = 4, parse, onProgress } = {}) {
+  const prices = new Map();
+  for (let i = 0; i < conids.length; i += batch) {
+    const chunk = conids.slice(i, i + batch);
+    const merged = new Map();
+    const url = `${gateway}/v1/api/iserver/marketdata/snapshot?conids=${chunk.join(',')}&fields=31,7741`;
+
+    for (let poll = 0; poll < polls; poll += 1) {
+      try {
+        const rows = await request(url, { timeout: 20000 });
+        for (const row of Array.isArray(rows) ? rows : []) {
+          const conid = Number(row.conid ?? row.conidEx);
+          if (!conid) continue;
+          merged.set(conid, { ...merged.get(conid), ...row });
+        }
+      } catch {
+        /* the next poll may still answer */
+      }
+      const done = chunk.every((c) => parse(merged.get(c)?.['31']) !== null);
+      if (done) break;
+      if (poll < polls - 1) await sleep(1500);
+    }
+
+    for (const conid of chunk) {
+      const row = merged.get(conid) || {};
+      prices.set(conid, parse(row['31']) ?? parse(row['7741']));
+    }
+    onProgress?.(Math.min(i + batch, conids.length), conids.length);
+  }
+  return prices;
+}
+
 /* -------------------------------------------------------------------- run */
 
 /* ----------------------------------------------------------------- account */

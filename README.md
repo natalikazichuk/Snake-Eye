@@ -98,6 +98,7 @@ npm run fundamentals -- --contact you@example.com
 | `npm run ingest` | pull daily bars for the whole list |
 | `npm run ticker -- PLUG` | one symbol on demand, with its score breakdown |
 | `npm run universe` | show the scan list; `--add` `--remove` `--from-portfolio` edit it |
+| `npm run universe -- --nyse --max-price 20` | replace the list with every NYSE stock under $20 |
 | `npm run fundamentals` | fill fundamentals from SEC filings |
 | `npm run fields` | probe which snapshot field ids this gateway build answers |
 | `npm run demo-data` | regenerate the demo universe (same seed → same data) |
@@ -214,7 +215,7 @@ snake-eye/
 ├── scripts/
 │   ├── ibkr-ingest.mjs         pulls bars for the whole list
 │   ├── ticker.mjs              pulls and scores one symbol
-│   ├── universe.mjs            manages the scan list; can seed it from holdings
+│   ├── universe.mjs            manages the scan list; seeds it from holdings or NYSE by price
 │   ├── sec-ingest.mjs          fills fundamentals from SEC EDGAR
 │   ├── gateway-status.mjs      one-command gateway diagnosis
 │   ├── gateway-keepalive.mjs   holds the IBKR session open
@@ -223,6 +224,7 @@ snake-eye/
 │   └── lib/
 │       ├── ibkr-client.mjs         everything that talks to the gateway
 │       ├── ibkr-normalize.mjs      IBKR payloads → the app's data shape
+│       ├── nyse-list.mjs           NYSE listing → common stocks, price band
 │       └── sec-fundamentals.mjs    XBRL facts → the fundamentals block
 ├── tests/                      indicators · filters · ibkr-normalize · sec-fundamentals
 └── docs/

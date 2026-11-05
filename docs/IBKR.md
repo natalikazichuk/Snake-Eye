@@ -182,6 +182,39 @@ Keep it to what you actually watch. IBKR paces historical requests (§4), so:
 | 500 | ~1.5 hours |
 | 3000 | 8+ hours — use a different provider for a full-market sweep |
 
+### Building the list from NYSE by price
+
+To scan a whole price band instead of picking symbols by hand:
+
+```bash
+npm run universe -- --nyse --max-price 20               # NYSE stocks under $20
+npm run universe -- --nyse --min-price 1 --max-price 20 # the same, without sub-$1 stocks
+```
+
+This downloads the public NYSE listing from Nasdaq Trader (`otherlisted.txt`,
+refreshed each morning). It keeps the common stock and leaves out ETFs,
+preferreds, warrants, units, rights and exchange-traded notes. It then asks the
+gateway for each stock's last price, in batches of a hundred, which takes a few
+minutes. The list it writes replaces the old one. `listName` and `verified` say
+when it was built and how many stocks passed.
+
+Two kinds of symbol do not make it onto the list, and the command reports both:
+
+- **Class shares** such as `BF.B`. The ingest does not resolve the dotted form
+  yet.
+- **Stocks IBKR could not find, or sent no price for.** These are usually
+  thinly traded.
+
+On 2026-11-05 the listing held 2,198 NYSE common stocks. Expect several hundred
+of them under $20, which is a 1–2 hour ingest, so run it overnight:
+
+```bash
+npm run ingest -- --period 3y
+```
+
+The listing only holds companies that trade today. A stock delisted last year is
+missing from it, so a backtest over this list looks better than the market was.
+
 ---
 
 ## 4. Run the ingest
@@ -240,6 +273,7 @@ npm run universe -- --remove NIO,GRAB
 npm run universe -- --clear
 npm run universe -- --from-portfolio   # replace it with your IBKR stock positions
 npm run universe -- --prune-data       # drop data rows no longer on the list
+npm run universe -- --nyse --max-price 20   # replace it with NYSE stocks under $20 (§3)
 ```
 
 Editing the list changes nothing by itself; `npm run ingest` pulls the data for
