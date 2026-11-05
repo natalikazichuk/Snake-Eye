@@ -236,6 +236,12 @@ with the date it last traded. `--fresh-days 14` loosens that and
 A stock listed less than three years ago is kept with the history it has. Its
 first session is simply later than the others'.
 
+A long run can be interrupted without losing it. Every 10 symbols the ingest
+saves what it has to `data/stocks.local.partial.json`. Running the same command
+again (same `--period`, `--bar` and `--volume-factor`) skips what is already
+done and retries what failed. The progress file is deleted once a run finishes
+with no failures. `--restart` ignores it and starts from the first symbol.
+
 Output:
 
 ```text
