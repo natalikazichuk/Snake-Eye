@@ -83,7 +83,11 @@ function parseArgs(argv) {
       case '--data': options.data = next(); break;
       case '--gateway': options.gateway = next().replace(/\/$/, ''); break;
       case '--help': case '-h': options.help = true; break;
-      default: break;
+      // An option this version does not know must not pass silently: an old
+      // checkout given --nyse would otherwise just print the old list, which
+      // looks like success.
+      default:
+        throw new Error(`Unknown option: ${argv[i]}  (npm run universe -- --help lists them)`);
     }
   }
   return options;
