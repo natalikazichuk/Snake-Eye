@@ -87,6 +87,14 @@ npm run fundamentals -- --contact you@example.com
 The ingest paces itself: IBKR allows roughly 60 historical requests per 10
 minutes, so twenty symbols take a couple of minutes on purpose.
 
+**If it stops halfway, run the same command again.** A closed window, a
+computer that slept or lost power, a gateway that logged out: in each case the
+symbols pulled so far are already saved in `data/stocks.local.partial.json`
+(every 10 symbols), and `npm run ingest` with the same options continues from
+there. Symbols that failed on an error are retried. The site keeps showing the
+last complete dataset until the new one is finished. `--restart` throws the
+saved progress away and starts from the first symbol.
+
 ### Window 3 — the site
 
 ```bat

@@ -24,6 +24,10 @@
  *   --limit <n>           only the first n symbols (a quick smoke test)
  *   --fresh-days <n>      skip symbols not traded in n days (default 7)
  *   --include-stale       keep symbols that have stopped trading
+ *   --restart             ignore saved progress, start from the first symbol
+ *
+ * An interrupted run resumes: progress is saved beside the output every few
+ * symbols, and the same command run again continues where it stopped.
  *   --no-fundamentals     skip the fundamentals request entirely
  *   --dry-run             resolve nothing, just print the plan
  *
@@ -55,6 +59,16 @@ import {
   resolveGateway,
   withRetry,
 } from './lib/ibkr-client.mjs';
+import {
+  clearProgress,
+  loadProgress,
+  progressPath,
+  saveProgress,
+  settledSymbols,
+} from './lib/ingest-progress.mjs';
+
+/** Save progress after this many symbols — at most this many are lost to a power cut. */
+const CHECKPOINT_EVERY = 10;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -71,6 +85,7 @@ function parseArgs(argv) {
     delay: 1200,
     limit: null,
     freshDays: FRESH_DAYS,
+    restart: false,
     fundamentals: true,
     dryRun: false,
     debug: false,
@@ -90,6 +105,7 @@ function parseArgs(argv) {
       case '--limit': options.limit = Number(next()); break;
       case '--fresh-days': options.freshDays = Number(next()); break;
       case '--include-stale': options.freshDays = 0; break;
+      case '--restart': options.restart = true; break;
       case '--no-fundamentals': options.fundamentals = false; break;
       case '--dry-run': options.dryRun = true; break;
       case '--debug': options.debug = true; break;
@@ -125,7 +141,11 @@ const HELP = `Snake Eye — IBKR ingest
   --limit <n>          only the first n symbols
   --fresh-days <n>     skip symbols whose last bar is older than n days (default ${FRESH_DAYS})
   --include-stale      keep them anyway
+  --restart            ignore saved progress and start from the first symbol
   --no-fundamentals    skip fundamentals
+
+An interrupted run resumes: progress is saved every ${CHECKPOINT_EVERY} symbols, and running
+the same command again continues from where it stopped.
   --dry-run            print the plan without calling the gateway
   --debug              print the raw gateway reply when a symbol cannot be resolved
 `;
@@ -166,12 +186,52 @@ async function main() {
   const accountCount = await initSession(options.gateway);
   console.log(`   auth     : ok${accountCount ? ` (${accountCount} account${accountCount > 1 ? 's' : ''})` : ''}\n`);
 
+  const progressFile = resolve(ROOT, progressPath(options.out));
+  if (options.restart) await clearProgress(progressFile);
+  const { state, reason } = await loadProgress(progressFile, {
+    period: options.period, bar: options.bar, volumeFactor: options.volumeFactor,
+  });
+  if (reason) console.log(`   progress : ${reason}`);
+
+  // Only what is still on the list carries over; a symbol dropped from the
+  // list since the interrupted run is not resurrected.
+  const listed = new Set(symbols);
+  const stocks = (state?.stocks || []).filter((stock) => listed.has(String(stock.ticker).toUpperCase()));
+  // [symbol, reason, lasting] — lasting skips are saved and not retried;
+  // failures on an error are reported but retried by the next run.
+  const skipped = (state?.skipped || [])
+    .filter(([symbol]) => listed.has(String(symbol).toUpperCase()))
+    .map(([symbol, why]) => [symbol, why, true]);
+  const settled = settledSymbols({ stocks, skipped });
+  const run = state?.run || {
+    period: options.period, bar: options.bar, volumeFactor: options.volumeFactor,
+    startedAt: new Date().toISOString(),
+  };
+
+  if (settled.size) {
+    console.log(`   resuming : ${settled.size} of ${symbols.length} already done ` +
+      `(${stocks.length} pulled, ${skipped.length} skipped) — continuing with the rest\n`);
+  }
+
+  const checkpoint = () => saveProgress(progressFile, {
+    run,
+    stocks,
+    skipped: skipped.filter(([, , lasting]) => lasting).map(([symbol, why]) => [symbol, why]),
+  });
+
   const pace = createPacer({ delay: options.delay });
-  const stocks = [];
-  const skipped = [];
+  let sinceCheckpoint = 0;
 
   for (const [index, symbol] of symbols.entries()) {
+    if (settled.has(symbol)) continue;
     const position = `[${String(index + 1).padStart(3)}/${symbols.length}]`;
+
+    if (sinceCheckpoint >= CHECKPOINT_EVERY) {
+      await checkpoint();
+      sinceCheckpoint = 0;
+    }
+    sinceCheckpoint += 1;
+
     try {
       await pace();
       const contract = await withRetry(`search ${symbol}`, () =>
@@ -180,7 +240,7 @@ async function main() {
         console.log(`      resolved ${symbol}: ${JSON.stringify(contract)}`);
       }
       if (!contract) {
-        skipped.push([symbol, 'no matching US stock contract']);
+        skipped.push([symbol, 'no matching US stock contract', true]);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (no contract)`);
         continue;
       }
@@ -191,7 +251,7 @@ async function main() {
       const history = normalizeHistory(raw, { volumeFactor: options.volumeFactor });
 
       if (!history || history.close.length < MIN_BARS) {
-        skipped.push([symbol, `only ${history?.close.length ?? 0} bars`]);
+        skipped.push([symbol, `only ${history?.close.length ?? 0} bars`, Boolean(history)]);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (too little history)`);
         continue;
       }
@@ -200,7 +260,7 @@ async function main() {
       // stops. Scanning it would rank a stock nobody can trade.
       const lag = daysSinceLastBar(history.dates.at(-1));
       if (options.freshDays && lag !== null && lag > options.freshDays) {
-        skipped.push([symbol, `not trading: last bar ${history.dates.at(-1)}, ${lag} days ago`]);
+        skipped.push([symbol, `not trading: last bar ${history.dates.at(-1)}, ${lag} days ago`, true]);
         console.log(`${position} ${symbol.padEnd(6)} — skipped (last traded ${history.dates.at(-1)})`);
         continue;
       }
@@ -225,10 +285,12 @@ async function main() {
         `last ${history.dates.at(-1)}  $${history.close.at(-1)}${short}`,
       );
     } catch (error) {
-      skipped.push([symbol, error.message]);
+      skipped.push([symbol, error.message, false]);
       console.log(`${position} ${symbol.padEnd(6)} — failed: ${error.message}`);
     }
   }
+
+  await checkpoint();
 
   if (!stocks.length) {
     if (skipped.every(([, reason]) => reason.includes('no matching'))) {
@@ -242,6 +304,17 @@ async function main() {
   const outPath = resolve(ROOT, options.out);
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, `${JSON.stringify(payload)}\n`);
+
+  // The run is complete only when every symbol was either pulled or skipped for
+  // a lasting reason. Failures keep the progress file, so running the command
+  // again retries just those.
+  const failed = skipped.filter(([, , lasting]) => !lasting);
+  if (failed.length) {
+    console.log(`\n   ${failed.length} symbol(s) failed on an error. Run the same command again to retry`);
+    console.log('   only those — everything else is kept.');
+  } else {
+    await clearProgress(progressFile);
+  }
 
   const withFundamentals = stocks.filter((s) => countsAsFundamentals(s.fundamentals)).length;
   const withRatios = stocks.filter((s) => s.fundamentals.revenue !== null && s.fundamentals.revenue !== undefined).length;
