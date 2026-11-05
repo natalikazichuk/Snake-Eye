@@ -224,7 +224,17 @@ npm run ingest                    # everything in config/universe.json
 npm run ingest -- --limit 5       # quick smoke test
 npm run ingest -- --dry-run       # print the plan, call nothing
 npm run ingest -- --period 2y     # more history (SMA200 needs 200+ sessions)
+npm run ingest -- --period 3y     # three years, ~750 daily bars per symbol
 ```
+
+Only stocks that are still trading are kept. A suspended or delisted symbol
+still answers with history, but its history stops, so the ingest skips any
+symbol whose last bar is more than 7 days old and lists it under *skipped*
+with the date it last traded. `--fresh-days 14` loosens that and
+`--include-stale` turns it off.
+
+A stock listed less than three years ago is kept with the history it has. Its
+first session is simply later than the others'.
 
 Output:
 

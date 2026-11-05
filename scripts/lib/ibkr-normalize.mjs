@@ -14,6 +14,21 @@ export const MIN_BARS = 60;
 export const FULL_BARS = 200;
 
 /**
+ * How many calendar days a symbol's last bar may lag today before it counts as
+ * no longer trading. A week covers a weekend plus a holiday; a suspended or
+ * delisted symbol whose history simply stops is weeks or months behind.
+ */
+export const FRESH_DAYS = 7;
+
+/** Calendar days between a bar date (YYYY-MM-DD) and today, or null if unreadable. */
+export function daysSinceLastBar(lastDate, today = new Date()) {
+  const last = Date.parse(`${lastDate}T00:00:00Z`);
+  if (!Number.isFinite(last)) return null;
+  const now = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  return Math.round((now - last) / 86400000);
+}
+
+/**
  * Pick the right row out of `/iserver/secdef/search`.
  *
  * The search is fuzzy: querying AAPL also returns AAPU, AAPB, foreign listings
