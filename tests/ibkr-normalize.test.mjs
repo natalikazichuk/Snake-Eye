@@ -17,6 +17,8 @@ import {
   normalizeFundamentals,
   normalizeHistory,
   countsAsFundamentals,
+  daysSinceLastBar,
+  FRESH_DAYS,
   normalizeSnapshot,
   parseIbkrNumber,
   pickContract,
@@ -307,4 +309,20 @@ test('carryFundamentals keeps earlier figures and lets fresh ones win', async ()
   assert.deepEqual(carryFundamentals({ pe: 9, eps: null }, { revenue: 1, pe: 2 }), { revenue: 1, pe: 9 });
   assert.deepEqual(carryFundamentals({ pe: 9 }, { industry: 'Funds' }), { pe: 9 });
   assert.deepEqual(carryFundamentals(undefined, undefined), {});
+});
+
+/* ------------------------------------------------------------- freshness */
+
+test('counts calendar days from the last bar to today', () => {
+  const today = new Date('2026-11-05T15:30:00Z');
+  assert.equal(daysSinceLastBar('2026-11-04', today), 1);
+  assert.equal(daysSinceLastBar('2026-10-30', today), 6);
+  assert.equal(daysSinceLastBar('2026-09-01', today), 65);
+  assert.equal(daysSinceLastBar('not a date', today), null);
+});
+
+test('a long weekend stays fresh, a suspended stock does not', () => {
+  // Friday's close read on the Tuesday after a Monday holiday.
+  assert.ok(daysSinceLastBar('2026-08-28', new Date('2026-09-01T12:00:00Z')) <= FRESH_DAYS);
+  assert.ok(daysSinceLastBar('2026-10-01', new Date('2026-11-05T12:00:00Z')) > FRESH_DAYS);
 });

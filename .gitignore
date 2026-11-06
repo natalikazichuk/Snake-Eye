@@ -8,5 +8,7 @@ Thumbs.db
 # Real IBKR data pulled by scripts/ibkr-ingest.mjs — personal, goes stale daily,
 # and must not be redistributed. Kept out of the repository on purpose.
 data/stocks.local.json
+data/stocks.local.partial.json
+data/stocks.local.partial.json.tmp
 config/conid-cache.json
 .env

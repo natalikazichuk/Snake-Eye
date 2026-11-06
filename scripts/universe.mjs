@@ -12,6 +12,8 @@
  *   npm run universe -- --clear            empty the list
  *   npm run universe -- --from-portfolio   replace it with your IBKR holdings
  *   npm run universe -- --prune-data       drop data rows no longer on the list
+ *   npm run universe -- --nyse --max-price 20
+ *                                          replace it with NYSE stocks under $20
  *
  * Editing the list changes nothing on its own — `npm run ingest` is what pulls
  * the data. The one exception is --prune-data, which removes rows from the data
@@ -26,11 +28,20 @@ import { fileURLToPath } from 'node:url';
 import {
   checkAuth,
   fetchAccounts,
+  fetchLastPrices,
   fetchPositions,
   initSession,
+  resolveConids,
   resolveGateway,
   withRetry,
 } from './lib/ibkr-client.mjs';
+import {
+  SYMBOL_DIRECTORY_URL,
+  commonStocks,
+  parseSnapshotPrice,
+  parseSymbolDirectory,
+  withinPrice,
+} from './lib/nyse-list.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -41,6 +52,15 @@ function parseArgs(argv) {
     gateway: 'https://localhost:5000',
     add: [], remove: [],
     clear: false, fromPortfolio: false, pruneData: false, help: false,
+    nyse: false, minPrice: null, maxPrice: null,
+  };
+
+  const price = (flag, value) => {
+    const n = Number(value);
+    if (value === undefined || !Number.isFinite(n) || n <= 0) {
+      throw new Error(`${flag} needs a positive number, got "${value ?? ''}"`);
+    }
+    return n;
   };
 
   const symbols = (value) => String(value || '')
@@ -56,11 +76,18 @@ function parseArgs(argv) {
       case '--clear': options.clear = true; break;
       case '--from-portfolio': options.fromPortfolio = true; break;
       case '--prune-data': options.pruneData = true; break;
+      case '--nyse': options.nyse = true; break;
+      case '--max-price': options.maxPrice = price('--max-price', next()); break;
+      case '--min-price': options.minPrice = price('--min-price', next()); break;
       case '--file': options.file = next(); break;
       case '--data': options.data = next(); break;
       case '--gateway': options.gateway = next().replace(/\/$/, ''); break;
       case '--help': case '-h': options.help = true; break;
-      default: break;
+      // An option this version does not know must not pass silently: an old
+      // checkout given --nyse would otherwise just print the old list, which
+      // looks like success.
+      default:
+        throw new Error(`Unknown option: ${argv[i]}  (npm run universe -- --help lists them)`);
     }
   }
   return options;
@@ -74,6 +101,17 @@ const HELP = `Snake Eye — manage the scan list (config/universe.json)
   npm run universe -- --clear            empty the list
   npm run universe -- --from-portfolio   replace it with your IBKR holdings
   npm run universe -- --prune-data       drop data rows no longer on the list
+
+  npm run universe -- --nyse --max-price 20
+                                         replace it with every NYSE common stock
+                                         whose last price is under $20
+  npm run universe -- --nyse --min-price 1 --max-price 20
+                                         the same, without stocks under $1
+  npm run universe -- --nyse             every NYSE common stock, no price check
+
+--nyse reads the public NYSE listing from Nasdaq Trader and keeps the common
+stock (no ETFs, preferreds, warrants, units, rights or notes). A price filter
+asks your gateway for each one's last price, in batches — a few minutes.
 
 The list is yours to edit; it is not read from your IBKR account unless you
 pass --from-portfolio. Run npm run ingest afterwards to pull the data.
@@ -173,6 +211,70 @@ async function fromPortfolio(gateway) {
   return [...new Set(holdings.map((h) => h.ticker))];
 }
 
+/**
+ * Every NYSE common stock, optionally only those priced inside a range.
+ *
+ * The listing is public; the prices come from the gateway, so a price filter
+ * needs it logged in, and a run without one needs nothing at all.
+ */
+async function fromNyse({ gateway, minPrice, maxPrice }) {
+  const response = await fetch(SYMBOL_DIRECTORY_URL, { headers: { 'User-Agent': 'snake-eye/0.2' } });
+  if (!response.ok) {
+    throw new Error(`Could not download the NYSE listing: HTTP ${response.status} from ${SYMBOL_DIRECTORY_URL}`);
+  }
+  const { rows, created } = parseSymbolDirectory(await response.text());
+  const { stocks, skipped } = commonStocks(rows);
+
+  console.log(`  NYSE listing${created ? ` (${created})` : ''}: ${stocks.length} common stocks`);
+  const left = Object.entries(skipped).map(([why, n]) => `${n} ${why}`).join(', ');
+  if (left) console.log(`    left out: ${left}`);
+
+  const symbols = stocks.map((s) => s.symbol);
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (minPrice === null && maxPrice === null) {
+    return {
+      symbols,
+      label: 'NYSE common stock',
+      note: `Built ${today}: ${symbols.length} NYSE common stocks from the listing, no price filter.`,
+    };
+  }
+
+  const base = await resolveGateway(gateway);
+  await withRetry('auth', () => checkAuth(base));
+  await initSession(base);
+
+  const progress = (what) => (done, total) => process.stdout.write(`\r  ${what}: ${done}/${total}   `);
+
+  const conids = await resolveConids(base, symbols, { onProgress: progress('contracts') });
+  process.stdout.write('\n');
+  const unresolved = symbols.filter((s) => !conids.has(s));
+
+  const byConid = await fetchLastPrices(base, [...conids.values()], {
+    parse: parseSnapshotPrice,
+    onProgress: progress('prices   '),
+  });
+  process.stdout.write('\n');
+
+  const prices = [...conids].map(([symbol, conid]) => [symbol, byConid.get(conid) ?? null]);
+  const { kept, noPrice } = withinPrice(prices, { min: minPrice, max: maxPrice });
+
+  const range = minPrice !== null && maxPrice !== null ? `$${minPrice} to under $${maxPrice}`
+    : maxPrice !== null ? `under $${maxPrice}` : `$${minPrice} or more`;
+  console.log(`  ${kept.length} of ${symbols.length} priced ${range}`);
+  if (unresolved.length) console.log(`    not found at IBKR (${unresolved.length}): ${unresolved.join(' ')}`);
+  if (noPrice.length) console.log(`    no price came back (${noPrice.length}): ${noPrice.join(' ')}`);
+
+  const label = minPrice !== null && maxPrice !== null ? `NYSE $${minPrice}–$${maxPrice}`
+    : maxPrice !== null ? `NYSE under $${maxPrice}` : `NYSE $${minPrice}+`;
+  return {
+    symbols: kept,
+    label,
+    note: `Built ${today} from the NYSE listing and IBKR last prices: ${kept.length} of ${symbols.length} ` +
+      `common stocks were ${range}. Prices move — rebuild before relying on the threshold.`,
+  };
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -186,6 +288,23 @@ async function main() {
     : [];
 
   let changed = false;
+  let target = config;
+
+  if ((options.minPrice !== null || options.maxPrice !== null) && !options.nyse) {
+    throw new Error('--min-price and --max-price filter the NYSE list; add --nyse.');
+  }
+  if (options.minPrice !== null && options.maxPrice !== null && options.minPrice >= options.maxPrice) {
+    throw new Error('--min-price must be below --max-price.');
+  }
+
+  if (options.nyse) {
+    console.log('\n  Building the list from NYSE…');
+    const built = await fromNyse(options);
+    if (!built.symbols.length) throw new Error('No symbols passed the filter — the list was left as it was.');
+    symbols = built.symbols;
+    target = { ...config, listName: built.label, verified: built.note };
+    changed = true;
+  }
 
   if (options.fromPortfolio) {
     console.log('\n  Reading your IBKR positions…');
@@ -216,13 +335,22 @@ async function main() {
   }
 
   if (changed) {
-    symbols = await writeUniverse(options.file, config, symbols);
+    symbols = await writeUniverse(options.file, target, symbols);
     console.log(`\n  ${options.file} updated.`);
   }
 
   if (options.pruneData) await pruneData(options.data, symbols);
 
-  report(symbols, await pulledSymbols(options.data));
+  if (symbols.length > 100) {
+    // Printing a thousand symbols helps nobody; the time the ingest will take does.
+    console.log(`\n  ${symbols.length} symbols in the list.`);
+    const hours = (symbols.length * 11) / 3600;
+    console.log(`  The ingest paces at roughly 10 s a symbol — about ${hours.toFixed(1)} h for this list.`);
+    console.log('  Run it overnight, with three years of history:');
+    console.log('    npm run ingest -- --period 3y');
+  } else {
+    report(symbols, await pulledSymbols(options.data));
+  }
 
   if (changed && !options.pruneData) {
     console.log('\n  Next: npm run ingest    (pulls the data for this list)');
