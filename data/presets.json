@@ -5,6 +5,7 @@
       "name": "Snake Hunt",
       "emoji": "🐍",
       "tagline": "The house strategy: cheap, liquid, trending up with momentum confirmed.",
+      "tipUk": "Фірмова стратегія: недорогі ліквідні акції у висхідному тренді з підтвердженим імпульсом.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "priceMin": 2,
@@ -23,6 +24,7 @@
       "name": "Momentum",
       "emoji": "🚀",
       "tagline": "Stocks already moving, with volume and both oscillators behind them.",
+      "tipUk": "Акції, що вже рухаються вгору, з підтримкою обсягу та обох осциляторів.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "priceMin": 2,
@@ -41,6 +43,7 @@
       "name": "Bullish Trend",
       "emoji": "📈",
       "tagline": "Clean trend structure: price over SMA20, moving averages stacked in order.",
+      "tipUk": "Чиста структура тренду: ціна вище SMA20, ковзні середні вишикувані по порядку.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "priceAboveSma20": true,
@@ -54,6 +57,7 @@
       "name": "Breakout",
       "emoji": "🔥",
       "tagline": "Heavy volume near the 52-week high, with momentum turning up.",
+      "tipUk": "Великий обсяг поблизу річного максимуму, імпульс розвертається вгору.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "relVolumeMin": 2,
@@ -67,6 +71,7 @@
       "name": "Value",
       "emoji": "💎",
       "tagline": "Profitable, growing and not expensive, with a balance sheet that holds up.",
+      "tipUk": "Прибуткові компанії, що зростають, недорого оцінені й мають надійний баланс.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "peMax": 20,
@@ -81,6 +86,7 @@
       "name": "High Volume",
       "emoji": "⚡",
       "tagline": "Today's tape is busy: twice the usual volume on a liquid name.",
+      "tipUk": "Жвавий день: обсяг удвічі вищий за звичайний у ліквідної акції.",
       "criteria": {
         "exchanges": ["NYSE", "NASDAQ"],
         "relVolumeMin": 2,

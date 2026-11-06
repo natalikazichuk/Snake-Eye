@@ -9,6 +9,8 @@
  */
 
 import { sortBy } from './sort.js';
+import { presetTip } from './preset-tip.js';
+import { initTooltips, withTip } from './tooltip.js';
 import { loadUniverse, loadPresets } from './api.js';
 import {
   FILTER_FIELDS,
@@ -372,18 +374,18 @@ async function initPresets(form) {
     const presets = await loadPresets();
     container.replaceChildren(
       ...presets.map((preset) =>
-        el('button', {
+        withTip(el('button', {
           type: 'button',
           className: 'preset',
           'data-preset': preset.id,
-          title: preset.tagline,
+          'data-tip-click': 'close',
         }, [
           el('span', { className: 'preset__emoji', text: preset.emoji }),
           el('span', { className: 'preset__body' }, [
             el('span', { className: 'preset__name', text: preset.name }),
             el('span', { className: 'preset__tagline', text: preset.tagline }),
           ]),
-        ]),
+        ]), null, presetTip(preset)),
       ),
     );
 
@@ -523,4 +525,7 @@ async function initScannerPage() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', initScannerPage);
+document.addEventListener('DOMContentLoaded', () => {
+  initTooltips();
+  initScannerPage();
+});

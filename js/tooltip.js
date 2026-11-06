@@ -87,9 +87,12 @@ export function initTooltips() {
   });
   document.addEventListener('focusout', hide);
   // Touch has no hover: a tap opens the explanation, a tap elsewhere closes it.
+  // An element that acts on click (a strategy button that scrolls to the
+  // results) marks itself `data-tip-click="close"`: clicking it is the action,
+  // and a bubble left behind would hang over the page it scrolled away from.
   document.addEventListener('click', (event) => {
     const target = tipOf(event);
-    if (target) show(target);
+    if (target && target.dataset.tipClick !== 'close') show(target);
     else hide();
   });
   document.addEventListener('keydown', (event) => {
