@@ -1,5 +1,5 @@
 /**
- * Snake Eye — the case for and against, in words.
+ * Snake Eye — the case for and against, in words (Ukrainian).
  *
  * Every sentence is derived from a number already on the page: each rule below
  * checks one condition and, when it holds, says what it is and why it matters.
@@ -23,116 +23,116 @@ const MAX_POINTS = 5;
 /** Rules that argue for owning it. Each returns a sentence or null. */
 const BULL = [
   [10, ({ m }) => isNum(m.sma20) && isNum(m.sma50) && isNum(m.sma200) && m.sma20 > m.sma50 && m.sma50 > m.sma200
-    ? 'The 20-, 50- and 200-day averages are stacked in bullish order — the textbook shape of an established uptrend.'
+    ? '20-, 50- і 200-денні середні вишикувані в бичачому порядку — класична картина сталого висхідного тренду.'
     : null],
   [9, ({ m }) => isNum(m.sma200) && m.price > m.sma200
-    ? `Price is ${pct(gap(m.price, m.sma200))} above its 200-day average (${price(m.sma200)}), so the long-term trend points up.`
+    ? `Ціна на ${pct(gap(m.price, m.sma200))} вища за 200-денну середню (${price(m.sma200)}), тож довгостроковий тренд спрямований угору.`
     : null],
   [7, ({ m }) => isNum(m.sma50) && isNum(m.sma20) && m.price > m.sma20 && m.price > m.sma50
-    ? `It also holds above both the 20-day (${price(m.sma20)}) and the 50-day (${price(m.sma50)}) averages, so the short and medium trends agree.`
+    ? `Вона також тримається вище 20-денної (${price(m.sma20)}) і 50-денної (${price(m.sma50)}) середніх — короткий і середній тренди збігаються.`
     : null],
   [8, ({ m }) => isNum(m.macd) && isNum(m.macdSignal) && m.macd > m.macdSignal
-    ? `MACD is above its signal line${isNum(m.macdHistogram) && isNum(m.macdHistogramPrev) && m.macdHistogram > m.macdHistogramPrev ? ' and the gap is widening' : ''}, which says momentum is on the buyers' side.`
+    ? `MACD вище сигнальної лінії${isNum(m.macdHistogram) && isNum(m.macdHistogramPrev) && m.macdHistogram > m.macdHistogramPrev ? ', і розрив між ними зростає' : ''} — імпульс на боці покупців.`
     : null],
   [6, ({ m }) => isNum(m.awesomeOscillator) && m.awesomeOscillator > 0 && isNum(m.awesomeOscillatorPrev) && m.awesomeOscillator > m.awesomeOscillatorPrev
-    ? 'The Awesome Oscillator is positive and rising, confirming momentum from a second angle.'
+    ? 'Awesome Oscillator додатний і зростає — ще одне підтвердження імпульсу.'
     : null],
   [7, ({ m }) => isNum(m.rsi14) && m.rsi14 >= 45 && m.rsi14 <= 65
-    ? `RSI at ${m.rsi14.toFixed(0)} sits in the healthy band — strong enough to trend, with room left before it is overbought.`
+    ? `RSI ${m.rsi14.toFixed(0)} — у здоровій зоні: достатньо сили для тренду і ще є запас до перекупленості.`
     : null],
   [6, ({ m }) => isNum(m.rsi14) && m.rsi14 < 30
-    ? `RSI at ${m.rsi14.toFixed(0)} is oversold; selling this one-sided often exhausts itself and invites a rebound.`
+    ? `RSI ${m.rsi14.toFixed(0)} — перепроданість; такий односторонній продаж часто вичерпується і змінюється відскоком.`
     : null],
   [8, ({ m }) => isNum(m.adx) && m.adx >= 25 && isNum(m.plusDI) && isNum(m.minusDI) && m.plusDI > m.minusDI
-    ? `ADX at ${m.adx.toFixed(0)} with +DI above -DI means the up-move has real directional strength, not just drift.`
+    ? `ADX ${m.adx.toFixed(0)} при +DI вище -DI: рух угору має справжню силу, а не просто дрейф.`
     : null],
   [7, ({ m }) => isNum(m.relativeVolume) && m.relativeVolume >= 1.5 && isNum(m.changePercent) && m.changePercent > 0
-    ? `Today's gain came on ${m.relativeVolume.toFixed(1)}x normal volume — buyers are showing up in size.`
+    ? `Сьогоднішнє зростання пройшло на обсязі в ${m.relativeVolume.toFixed(1)} раза вищому за звичайний — покупці заходять великими сумами.`
     : null],
   [6, ({ m }) => isNum(m.percentOf52wHigh) && m.percentOf52wHigh >= 95
-    ? `At ${pct(m.percentOf52wHigh)} of its 52-week high (${price(m.high52w)}), there is little overhead supply from holders waiting to break even.`
+    ? `Ціна на рівні ${pct(m.percentOf52wHigh)} від річного максимуму (${price(m.high52w)}), тож згори майже немає власників, які чекають нагоди вийти «в нуль».`
     : null],
   [4, ({ m }) => isNum(m.stochasticK) && isNum(m.stochasticD) && m.stochasticK > m.stochasticD && m.stochasticK < 30
-    ? 'The stochastic has turned up from oversold territory, an early sign of a bounce.'
+    ? 'Стохастик розвернувся вгору із зони перепроданості — ранній знак відскоку.'
     : null],
   [7, ({ f }) => isNum(f.revenueGrowth) && f.revenueGrowth >= 0.1
-    ? `Revenue grew ${ratioPct(f.revenueGrowth)} in the last fiscal year, so the business behind the chart is expanding.`
+    ? `Виручка за останній фінансовий рік зросла на ${ratioPct(f.revenueGrowth)} — бізнес за графіком розширюється.`
     : null],
   [6, ({ f }) => isNum(f.eps) && f.eps > 0 && isNum(f.pe) && f.pe > 0 && f.pe < 18
-    ? `It is profitable and priced at ${f.pe.toFixed(1)} times earnings, which is modest.`
+    ? `Компанія прибуткова й оцінена у ${f.pe.toFixed(1)} річного прибутку — це помірно.`
     : null],
   [5, ({ f }) => isNum(f.roe) && f.roe >= 0.15
-    ? `Return on equity of ${ratioPct(f.roe)} shows the company earns well on its capital.`
+    ? `Рентабельність капіталу ${ratioPct(f.roe)} — компанія добре заробляє на капіталі власників.`
     : null],
   [4, ({ f }) => isNum(f.debtEquity) && f.debtEquity >= 0 && f.debtEquity < 0.5
-    ? `Debt is light (${f.debtEquity.toFixed(2)} times equity), which leaves room to absorb a bad year.`
+    ? `Борг невеликий (${f.debtEquity.toFixed(2)} від власного капіталу), тож є запас пережити поганий рік.`
     : null],
 ];
 
 /** Rules that argue against it. */
 const BEAR = [
   [10, ({ m }) => isNum(m.sma20) && isNum(m.sma50) && isNum(m.sma200) && m.sma20 < m.sma50 && m.sma50 < m.sma200
-    ? 'The 20-, 50- and 200-day averages are stacked in bearish order — the shape of an established downtrend.'
+    ? '20-, 50- і 200-денні середні вишикувані у ведмежому порядку — картина сталого низхідного тренду.'
     : null],
   [9, ({ m }) => isNum(m.sma200) && m.price < m.sma200
-    ? `Price is ${pct(-gap(m.price, m.sma200))} below its 200-day average (${price(m.sma200)}): the long-term trend is still down.`
+    ? `Ціна на ${pct(-gap(m.price, m.sma200))} нижча за 200-денну середню (${price(m.sma200)}): довгостроковий тренд досі спрямований униз.`
     : null],
   [6, ({ m }) => isNum(m.sma50) && m.price < m.sma50
-    ? `It trades under its 50-day average (${price(m.sma50)}), which tends to act as resistance on rallies.`
+    ? `Вона торгується нижче 50-денної середньої (${price(m.sma50)}), яка на відскоках зазвичай стає опором.`
     : null],
   [8, ({ m }) => isNum(m.macd) && isNum(m.macdSignal) && m.macd < m.macdSignal
-    ? 'MACD is below its signal line, so short-term momentum is with the sellers.'
+    ? 'MACD нижче сигнальної лінії — короткостроковий імпульс на боці продавців.'
     : null],
   [5, ({ m }) => isNum(m.macd) && isNum(m.macdSignal) && m.macd > m.macdSignal && isNum(m.macdHistogram) && isNum(m.macdHistogramPrev) && m.macdHistogram < m.macdHistogramPrev
-    ? 'MACD is still above its signal, but the histogram is shrinking — momentum is fading.'
+    ? 'MACD поки вище сигнальної лінії, але гістограма скорочується — імпульс згасає.'
     : null],
   [6, ({ m }) => isNum(m.awesomeOscillator) && m.awesomeOscillator < 0
-    ? 'The Awesome Oscillator is below zero, a second read of negative momentum.'
+    ? 'Awesome Oscillator нижче нуля — ще одна ознака негативного імпульсу.'
     : null],
   [8, ({ m }) => isNum(m.rsi14) && m.rsi14 > 70
-    ? `RSI at ${m.rsi14.toFixed(0)} is overbought: after a run this steep, a pause or pullback is common, and buying here means paying up.`
+    ? `RSI ${m.rsi14.toFixed(0)} — перекупленість: після такого крутого зростання часто буває пауза або відкат, а купівля тут означає переплату.`
     : null],
   [5, ({ m }) => isNum(m.rsi14) && m.rsi14 >= 30 && m.rsi14 < 40
-    ? `RSI at ${m.rsi14.toFixed(0)} shows weak momentum without being washed out enough to suggest a bounce.`
+    ? `RSI ${m.rsi14.toFixed(0)} показує слабкий імпульс, але ще не настільки низький, щоб чекати відскоку.`
     : null],
   [8, ({ m }) => isNum(m.adx) && m.adx >= 25 && isNum(m.plusDI) && isNum(m.minusDI) && m.minusDI > m.plusDI
-    ? `ADX at ${m.adx.toFixed(0)} with -DI above +DI marks a strong downtrend — fighting it is expensive.`
+    ? `ADX ${m.adx.toFixed(0)} при -DI вище +DI — сильний низхідний тренд, іти проти нього дорого.`
     : null],
   [7, ({ m }) => isNum(m.relativeVolume) && m.relativeVolume >= 1.5 && isNum(m.changePercent) && m.changePercent < 0
-    ? `Today's drop came on ${m.relativeVolume.toFixed(1)}x normal volume — that looks like distribution, not noise.`
+    ? `Сьогоднішнє падіння пройшло на обсязі в ${m.relativeVolume.toFixed(1)} раза вищому за звичайний — це схоже на розпродаж, а не на шум.`
     : null],
   [8, ({ m }) => isNum(m.bbPercentB) && m.bbPercentB > 1
-    ? `Price closed above its upper Bollinger Band (${price(m.bbUpper)}), statistically stretched; such moves often snap back toward the middle band (${price(m.bbMiddle)}).`
+    ? `Ціна закрилася вище верхньої смуги Боллінджера (${price(m.bbUpper)}) — статистично «розтягнута»; такі рухи часто повертаються до середньої смуги (${price(m.bbMiddle)}).`
     : null],
   [9, ({ m }) => isNum(m.avgVolume20) && m.avgVolume20 < 100_000
-    ? `Liquidity is thin at about ${Math.round(m.avgVolume20 / 1000)}K shares a day: spreads are wider, and a large order can move the price against you.`
+    ? `Ліквідність низька — близько ${Math.round(m.avgVolume20 / 1000)} тис. акцій на день: спред ширший, і велика заявка може зсунути ціну проти вас.`
     : null],
   [4, ({ m }) => isNum(m.relativeVolume) && m.relativeVolume < 0.6
-    ? `Volume is only ${m.relativeVolume.toFixed(1)}x normal, so today's move has little conviction behind it.`
+    ? `Обсяг лише ${m.relativeVolume.toFixed(1)} від звичайного, тож за сьогоднішнім рухом мало переконаності.`
     : null],
   [6, ({ m }) => isNum(m.percentOf52wHigh) && m.percentOf52wHigh < 70
-    ? `It sits ${pct(100 - m.percentOf52wHigh)} below its 52-week high, and holders from higher up may sell into any recovery.`
+    ? `Ціна на ${pct(100 - m.percentOf52wHigh)} нижча за річний максимум, і ті, хто купив вище, можуть продавати на будь-якому відновленні.`
     : null],
   [5, ({ m }) => isNum(m.atrPercent) && m.atrPercent >= 5
-    ? `It swings about ${pct(m.atrPercent, 1)} a day (ATR), so a normal stop has to sit wide and position size has to shrink.`
+    ? `Вона коливається приблизно на ${pct(m.atrPercent, 1)} за день (ATR), тож стоп-лос доведеться ставити далеко, а позицію — зменшувати.`
     : null],
   [8, ({ f }) => isNum(f.eps) && f.eps < 0
-    ? 'The company lost money in its last fiscal year, so the price rests on expectations rather than earnings.'
+    ? 'Компанія була збиткова в останньому фінансовому році, тож ціна тримається на очікуваннях, а не на прибутку.'
     : null],
   [7, ({ f }) => isNum(f.revenueGrowth) && f.revenueGrowth < 0
-    ? `Revenue shrank ${ratioPct(-f.revenueGrowth)} last year.`
+    ? `Виручка минулого року скоротилася на ${ratioPct(-f.revenueGrowth)}.`
     : null],
   [5, ({ f }) => isNum(f.pe) && f.pe > 40
-    ? `At ${f.pe.toFixed(0)} times earnings the valuation already assumes a lot of growth.`
+    ? `При P/E ${f.pe.toFixed(0)} оцінка вже закладає дуже багато майбутнього зростання.`
     : null],
   [5, ({ f }) => isNum(f.debtEquity) && f.debtEquity > 2
-    ? `Leverage is high (debt ${f.debtEquity.toFixed(1)} times equity), which magnifies any downturn.`
+    ? `Борг великий (${f.debtEquity.toFixed(1)} від власного капіталу), що посилить будь-який спад.`
     : null],
   [7, ({ security }) => security?.kind === 'fund'
-    ? 'As a fund, it can trade at a premium or discount to the value of its holdings, which none of these charts show — check the NAV before acting on the chart.'
+    ? 'Це фонд: його ціна може бути вищою або нижчою за вартість активів (NAV), чого ці графіки не показують, — перевірте NAV, перш ніж діяти за графіком.'
     : null],
   [6, ({ security }) => security?.kind === 'adr' || security?.kind === 'foreign'
-    ? `As a foreign issuer${security.country ? ` (${security.country})` : ''}, it carries currency and home-market risk that a US chart does not capture.`
+    ? `Це іноземна компанія${security.country ? ` (${security.country})` : ''}: валютний ризик і ризик її домашнього ринку американський графік не відображає.`
     : null],
 ];
 
@@ -143,31 +143,31 @@ const BEAR = [
  */
 const BULL_WATCH = [
   ({ m }) => isNum(m.sma50) && m.price < m.sma50
-    ? `A close back above the 50-day average (${price(m.sma50)}, ${pct(gap(m.sma50, m.price), 1)} higher) would be the first sign the trend is turning.`
+    ? `Закриття знову вище 50-денної середньої (${price(m.sma50)}, на ${pct(gap(m.sma50, m.price), 1)} вище) стане першою ознакою розвороту тренду.`
     : null,
   ({ m }) => isNum(m.sma200) && m.price < m.sma200 && (!isNum(m.sma50) || m.price >= m.sma50)
-    ? `Reclaiming the 200-day average (${price(m.sma200)}) would turn the long-term trend up.`
+    ? `Повернення вище 200-денної середньої (${price(m.sma200)}) розверне довгостроковий тренд угору.`
     : null,
   ({ m }) => isNum(m.low52w) && m.low52w > 0 && m.price > m.low52w
-    ? `The 52-week low at ${price(m.low52w)} (${pct(gap(m.price, m.low52w))} below) is where buyers stepped in before.`
+    ? `Річний мінімум ${price(m.low52w)} (на ${pct(gap(m.price, m.low52w))} нижче) — рівень, де покупці вже заходили раніше.`
     : null,
   ({ m }) => isNum(m.rsi14) && m.rsi14 >= 40 && m.rsi14 < 45
-    ? `RSI at ${m.rsi14.toFixed(0)} is close to the healthy band; a push above 45 would confirm returning momentum.`
+    ? `RSI ${m.rsi14.toFixed(0)} близько до здорової зони; підйом вище 45 підтвердить повернення імпульсу.`
     : null,
 ];
 
 const BEAR_WATCH = [
   ({ m }) => isNum(m.sma20) && m.price > m.sma20
-    ? `A close below the 20-day average (${price(m.sma20)}, ${pct(gap(m.price, m.sma20), 1)} lower) would be the first crack in the short-term trend.`
+    ? `Закриття нижче 20-денної середньої (${price(m.sma20)}, на ${pct(gap(m.price, m.sma20), 1)} нижче) стане першою тріщиною в короткостроковому тренді.`
     : null,
   ({ m }) => isNum(m.sma50) && m.price > m.sma50
-    ? `The 50-day average at ${price(m.sma50)} is the next support; losing it would put the medium-term trend in question.`
+    ? `Наступна підтримка — 50-денна середня ${price(m.sma50)}; її втрата поставить під сумнів середньостроковий тренд.`
     : null,
   ({ m }) => isNum(m.atr14) && m.atr14 > 0
-    ? `A typical day moves it about ${price(m.atr14)} (ATR), so a stop much tighter than that is likely to be hit by noise.`
+    ? `За звичайний день ціна рухається приблизно на ${price(m.atr14)} (ATR), тож стоп-лос, набагато ближчий за це, ймовірно, виб'є звичайний шум.`
     : null,
   ({ m }) => isNum(m.rsi14) && m.rsi14 > 65 && m.rsi14 <= 70
-    ? `RSI at ${m.rsi14.toFixed(0)} is nearing overbought, so the easy part of the move may be behind it.`
+    ? `RSI ${m.rsi14.toFixed(0)} наближається до перекупленості, тож найлегша частина руху, можливо, вже позаду.`
     : null,
 ];
 
@@ -191,15 +191,15 @@ function verdict(side, points, other, score) {
   const against = other.reduce((sum, p) => sum + p.weight, 0);
   const label = `Snake Score ${score.total}/100 (${score.label})`;
   if (side === 'bull') {
-    if (!points.length) return `${label}: nothing in the data argues for buying right now.`;
-    if (strength >= against * 1.5) return `${label}: the evidence leans clearly toward the buyers.`;
-    if (strength > against) return `${label}: the buyers have a slight edge, with real objections on the other side.`;
-    return `${label}: there is a case for buying, but it is the weaker one today.`;
+    if (!points.length) return `${label}: зараз у даних немає аргументів на користь купівлі.`;
+    if (strength >= against * 1.5) return `${label}: дані явно на боці покупців.`;
+    if (strength > against) return `${label}: у покупців невелика перевага, але є і серйозні заперечення.`;
+    return `${label}: аргументи за купівлю є, але сьогодні вони слабші.`;
   }
-  if (!points.length) return 'Nothing in the data argues strongly against it right now; the main risk is the market itself.';
-  if (strength >= against * 1.5) return 'The case against is the stronger one today.';
-  if (strength > against) return 'The sellers have a slight edge, though the picture is mixed.';
-  return 'The case against is the weaker one, but these risks are real.';
+  if (!points.length) return 'Зараз у даних немає сильних аргументів проти; головний ризик — сам ринок.';
+  if (strength >= against * 1.5) return 'Сьогодні аргументи проти сильніші.';
+  if (strength > against) return 'У продавців невелика перевага, хоча картина неоднозначна.';
+  return 'Аргументи проти слабші, але ці ризики реальні.';
 }
 
 /**

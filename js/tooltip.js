@@ -18,6 +18,7 @@ function ensureBubble() {
   bubble.className = 'tip-bubble';
   bubble.id = 'tip-bubble';
   bubble.setAttribute('role', 'tooltip');
+  bubble.lang = 'uk';
   bubble.hidden = true;
   document.body.append(bubble);
   return bubble;

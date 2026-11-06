@@ -12,20 +12,20 @@ const KINDS = {
   fund: {
     label: 'Fund',
     tip:
-      'Investment fund: it files N-CSR with the SEC, not a 10-K. Its price can sit at a premium or a discount to the ' +
-      'net asset value of what it holds, which these charts do not show, and it has no company fundamentals to score.',
+      'Інвестиційний фонд: звітує в SEC формою N-CSR, а не 10-K. Його ціна може бути вищою або нижчою за чисту ' +
+      'вартість активів (NAV), чого ці графіки не показують, і в нього немає фундаментальних даних компанії для оцінки.',
   },
   adr: {
     label: 'ADR',
     tip:
-      'Foreign company (files a 20-F with the SEC). The US listing is a depositary receipt for shares traded abroad, so ' +
-      'the currency and the home market add risk, and US-GAAP fundamentals are often missing.',
+      'Іноземна компанія (звітує в SEC формою 20-F). У США торгується депозитарна розписка на акції, що обертаються ' +
+      'за кордоном, тож валюта й домашній ринок додають ризику, а фундаментальних даних за US-GAAP часто немає.',
   },
   foreign: {
     label: 'Foreign',
     tip:
-      'Foreign issuer filing a 40-F — usually Canadian. Its shares trade both at home and in the US, and its reports ' +
-      'follow its home rules, so some fundamentals may be missing.',
+      'Іноземний емітент, що звітує формою 40-F, — зазвичай канадський. Його акції торгуються і вдома, і в США, а звіти ' +
+      'складені за правилами його країни, тож частини фундаментальних даних може не бути.',
   },
 };
 
