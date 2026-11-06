@@ -1,99 +1,99 @@
 /**
  * Snake Eye — what every number on the stock page means, shown on hover.
  *
- * Keyed by the exact label the page prints, so a label and its explanation
- * cannot drift apart silently: tests/glossary.test.mjs checks that every score
- * item has an entry.
+ * Keyed by the exact (English) label the page prints, so a label and its
+ * explanation cannot drift apart silently: tests/analysis.test.mjs checks that
+ * every score item has an entry. The explanations are in Ukrainian.
  */
 
-const SMA = 'Simple moving average: the mean closing price over the last N sessions.';
+const SMA = 'Проста ковзна середня (SMA) — середня ціна закриття за останні N торгових днів.';
 
 export const GLOSSARY = {
   /* ------------------------------------------------------------ score */
   'Snake Score':
-    'One 0–100 number for how well the stock fits the scanner\'s setup: technical 40%, momentum 25%, volume 20%, ' +
-    'fundamental 15%. It measures fit to the criteria, not where the price will go.',
-  Technical: 'Trend structure: where the price sits against its moving averages, how they are stacked, and how strong the trend is.',
-  Momentum: 'Whether the move is speeding up or fading, read from MACD, the Awesome Oscillator and RSI.',
-  Volume: 'Whether traders are actually participating: today\'s volume against normal, and how liquid the stock is.',
-  Fundamental: 'The business behind the ticker: growth, profitability, valuation and leverage from annual filings.',
+    'Одне число від 0 до 100: наскільки акція відповідає умовам сканера. Технічна частина — 40%, моментум — 25%, ' +
+    'обсяг — 20%, фундаментальна — 15%. Це оцінка відповідності критеріям, а не прогноз ціни.',
+  Technical: 'Структура тренду: де ціна відносно ковзних середніх, як вони вишикувані між собою і наскільки сильний тренд.',
+  Momentum: 'Чи рух прискорюється, чи згасає — за MACD, Awesome Oscillator та RSI.',
+  Volume: 'Чи справді є інтерес покупців і продавців: сьогоднішній обсяг порівняно зі звичайним і ліквідність акції.',
+  Fundamental: 'Сам бізнес за тікером: зростання, прибутковість, оцінка і борг — з річних звітів.',
 
-  'Price > SMA20': `Short-term trend. Price above its 20-day average means the last month leans up. ${SMA}`,
-  'Price > SMA50': `Medium-term trend: price above its 50-day (about 10 weeks) average. ${SMA}`,
-  'Price > SMA200': `Long-term trend: price above its 200-day (about 10 months) average — the line most traders watch. ${SMA}`,
-  'SMA20 > SMA50': 'The short average above the medium one: the recent trend is stronger than the older one.',
-  'SMA50 > SMA200': 'The 50-day above the 200-day. Crossing up is called a "golden cross", crossing down a "death cross".',
+  'Price > SMA20': `Короткостроковий тренд. Ціна вище 20-денної середньої — останній місяць схиляється вгору. ${SMA}`,
+  'Price > SMA50': `Середньостроковий тренд: ціна вище 50-денної середньої (приблизно 10 тижнів). ${SMA}`,
+  'Price > SMA200': `Довгостроковий тренд: ціна вище 200-денної середньої (приблизно 10 місяців) — лінії, за якою стежить більшість трейдерів. ${SMA}`,
+  'SMA20 > SMA50': 'Коротка середня вище середньої: недавній тренд сильніший за попередній.',
+  'SMA50 > SMA200': '50-денна середня вище 200-денної. Перетин знизу вгору називають «золотим хрестом», згори вниз — «хрестом смерті».',
   'ADX trend strength':
-    'Average Directional Index, 0–100: how strong the trend is, not which way. Below 20 is a range, above 25 a trend, above 40 a strong one.',
+    'ADX, від 0 до 100: показує силу тренду, але не його напрямок. Нижче 20 — бічний рух, вище 25 — тренд, вище 40 — сильний тренд.',
   'Upper half of Bollinger range':
-    'Price in the upper part of its Bollinger Bands (%B above 0.5): it has been closing near the top of its recent range.',
+    'Ціна у верхній половині смуг Боллінджера (%B вище 0.5): останнім часом закривається біля верхньої межі свого діапазону.',
 
   'MACD above signal':
-    'MACD (the 12-day EMA minus the 26-day EMA) above its 9-day signal line: short-term momentum is beating the longer trend.',
-  'MACD histogram rising': 'The gap between MACD and its signal line is widening upward: momentum is building, not fading.',
-  'Awesome Oscillator > 0': 'The 5-bar average of the midpoint price is above the 34-bar one: buyers have the upper hand.',
-  'Awesome Oscillator rising': 'The oscillator bar is higher than the one before: momentum is improving.',
+    'MACD (12-денна EMA мінус 26-денна EMA) вище своєї 9-денної сигнальної лінії: короткостроковий імпульс сильніший за довший тренд.',
+  'MACD histogram rising': 'Відстань між MACD і сигнальною лінією зростає: імпульс посилюється, а не згасає.',
+  'Awesome Oscillator > 0': '5-денна середня середини свічки вище 34-денної: перевага на боці покупців.',
+  'Awesome Oscillator rising': 'Поточний стовпчик осцилятора вищий за попередній: імпульс покращується.',
   'RSI in the healthy band':
-    'Relative Strength Index between 45 and 65 earns full credit: strong enough to trend, not yet stretched. Above 70 is overbought, below 30 oversold.',
+    'RSI від 45 до 65 дає повний бал: достатньо сили для тренду, але ще без перегріву. Вище 70 — перекупленість, нижче 30 — перепроданість.',
 
-  'Relative volume': 'Today\'s volume divided by the 20-day average. 1.0x is a normal day; 2x means twice the usual trading.',
+  'Relative volume': 'Сьогоднішній обсяг, поділений на середній за 20 днів. 1.0x — звичайний день, 2x — удвічі більше торгів, ніж зазвичай.',
   'Average volume (liquidity)':
-    'Shares traded per day on average over 20 sessions. Under about 100K is thin — wide spreads and hard exits; 5M+ is fully liquid.',
-  'Volume vs 50-day average': 'Today\'s volume against the 50-day average: a surge on a move gives it conviction.',
+    'Скільки акцій у середньому торгується за день (за 20 днів). Менше приблизно 100 тис. — мало: широкий спред і важко вийти з позиції; від 5 млн — повна ліквідність.',
+  'Volume vs 50-day average': 'Сьогоднішній обсяг порівняно з середнім за 50 днів: сплеск обсягу на русі додає йому переконливості.',
 
-  'Revenue growth': 'Change in annual revenue against the year before, from the latest annual filing.',
-  'Positive EPS': 'Earnings per share above zero: the company made a profit in its last fiscal year.',
-  'EPS growth': 'Change in earnings per share against the year before.',
+  'Revenue growth': 'Зміна річної виручки порівняно з попереднім роком, за останнім річним звітом.',
+  'Positive EPS': 'Прибуток на акцію більше нуля: компанія була прибуткова в останньому фінансовому році.',
+  'EPS growth': 'Зміна прибутку на акцію порівняно з попереднім роком.',
   'Valuation (P/E)':
-    'Price divided by earnings per share: how many years of current profit the price pays for. Lower is cheaper; it means little for loss makers.',
-  'Return on equity': 'Net income divided by shareholders\' equity: how much profit the company makes on the owners\' capital. Above 15% is strong.',
-  'Debt / equity': 'Total liabilities against shareholders\' equity. Above 2 is heavily leveraged; under 0.5 is conservative.',
+    'Ціна, поділена на прибуток на акцію: за скільки років нинішнього прибутку платить покупець. Менше — дешевше; для збиткових компаній показник мало що означає.',
+  'Return on equity': 'Чистий прибуток, поділений на власний капітал: скільки компанія заробляє на капіталі власників. Понад 15% — сильно.',
+  'Debt / equity': 'Усі зобов\'язання відносно власного капіталу. Понад 2 — великий борг; менше 0.5 — консервативно.',
 
   /* ------------------------------------------------------- indicators */
-  'RSI (14)': 'Relative Strength Index over 14 sessions, 0–100. Above 70 is overbought, below 30 oversold, 45–65 a healthy trend.',
-  MACD: 'Moving Average Convergence Divergence: the 12-day EMA minus the 26-day EMA. Positive means the short trend is above the long one.',
-  'Awesome Osc.': 'Awesome Oscillator: 5-bar minus 34-bar average of the midpoint price. Above zero is bullish momentum, below is bearish.',
-  'ADX (14)': 'Average Directional Index: trend strength, 0–100, regardless of direction. Above 25 is a trend.',
-  'ATR (14)': 'Average True Range: how far the price typically moves in a day, in dollars and as a percent of price. A volatility gauge and a common stop distance.',
-  'Rel. volume': 'Today\'s volume divided by the 20-day average. Above 1.5x is unusual interest.',
-  'MACD signal': 'A 9-day EMA of the MACD line. MACD crossing above it is a classic buy signal, crossing below a sell signal.',
-  'MACD histogram': 'MACD minus its signal line. Above zero and growing means momentum is accelerating.',
-  '+DI / -DI': 'Directional indicators behind ADX. +DI above -DI: up-moves dominate; -DI above +DI: down-moves dominate.',
+  'RSI (14)': 'Індекс відносної сили за 14 днів, від 0 до 100. Вище 70 — перекупленість, нижче 30 — перепроданість, 45–65 — здоровий тренд.',
+  MACD: 'MACD — різниця 12-денної і 26-денної експоненційних середніх. Додатне значення: короткий тренд вище довгого.',
+  'Awesome Osc.': 'Awesome Oscillator: 5-денна мінус 34-денна середня середини свічки. Вище нуля — бичачий імпульс, нижче — ведмежий.',
+  'ADX (14)': 'Індекс спрямованого руху: сила тренду від 0 до 100 незалежно від напрямку. Вище 25 — є тренд.',
+  'ATR (14)': 'Середній істинний діапазон: на скільки ціна зазвичай рухається за день — у доларах і у відсотках від ціни. Міра волатильності й типова відстань для стоп-лосу.',
+  'Rel. volume': 'Сьогоднішній обсяг, поділений на середній за 20 днів. Понад 1.5x — незвичний інтерес.',
+  'MACD signal': '9-денна EMA від лінії MACD. Перетин MACD знизу вгору — класичний сигнал на купівлю, згори вниз — на продаж.',
+  'MACD histogram': 'MACD мінус сигнальна лінія. Вище нуля і зростає — імпульс прискорюється.',
+  '+DI / -DI': 'Індикатори напрямку, з яких рахується ADX. +DI вище -DI — переважають рухи вгору; -DI вище +DI — вниз.',
   'Stochastic %K / %D':
-    'Where the close sits in the last 14 sessions\' high–low range, 0–100 (%D is its 3-day average). Above 80 overbought, below 20 oversold.',
-  'Bollinger upper': 'The 20-day average plus two standard deviations. Price above it is statistically stretched.',
-  'Bollinger middle': 'The 20-day simple moving average the bands are built around.',
-  'Bollinger lower': 'The 20-day average minus two standard deviations. Price below it is statistically washed out.',
-  'Bollinger %B': 'Where the price sits between the bands: 0 = lower band, 1 = upper band, above 1 = outside the top.',
+    'Де закриття знаходиться в діапазоні максимумів і мінімумів за 14 днів, від 0 до 100 (%D — його 3-денна середня). Вище 80 — перекупленість, нижче 20 — перепроданість.',
+  'Bollinger upper': '20-денна середня плюс два стандартні відхилення. Ціна вище цієї лінії статистично «розтягнута».',
+  'Bollinger middle': '20-денна проста середня, навколо якої будуються смуги.',
+  'Bollinger lower': '20-денна середня мінус два стандартні відхилення. Ціна нижче цієї лінії статистично перепродана.',
+  'Bollinger %B': 'Положення ціни між смугами: 0 — нижня смуга, 1 — верхня, понад 1 — вище верхньої.',
 
-  'SMA 20': `20-day simple moving average — the short-term trend. ${SMA}`,
-  'SMA 50': `50-day simple moving average — the medium-term trend. ${SMA}`,
-  'SMA 200': `200-day simple moving average — the long-term trend. ${SMA}`,
-  'EMA 20': '20-day exponential moving average: like the SMA but weights recent days more, so it turns sooner.',
-  'EMA 50': '50-day exponential moving average.',
-  'EMA 200': '200-day exponential moving average.',
+  'SMA 20': `20-денна проста середня — короткостроковий тренд. ${SMA}`,
+  'SMA 50': `50-денна проста середня — середньостроковий тренд. ${SMA}`,
+  'SMA 200': `200-денна проста середня — довгостроковий тренд. ${SMA}`,
+  'EMA 20': '20-денна експоненційна середня: як SMA, але останні дні важать більше, тому вона розвертається раніше.',
+  'EMA 50': '50-денна експоненційна середня.',
+  'EMA 200': '200-денна експоненційна середня.',
 
-  'Average volume (20d)': 'Mean daily share volume over the last 20 sessions.',
-  'Average volume (50d)': 'Mean daily share volume over the last 50 sessions.',
-  '52-week high': 'The highest price of the last year (252 sessions).',
-  '52-week low': 'The lowest price of the last year.',
-  '% of 52-week high': 'Current price as a share of the 52-week high. Near 100% the stock is at its highs; under 70% it is well off them.',
+  'Average volume (20d)': 'Середній денний обсяг торгів за останні 20 днів.',
+  'Average volume (50d)': 'Середній денний обсяг торгів за останні 50 днів.',
+  '52-week high': 'Найвища ціна за останній рік (252 торгові дні).',
+  '52-week low': 'Найнижча ціна за останній рік.',
+  '% of 52-week high': 'Поточна ціна як частка річного максимуму. Близько 100% — акція на максимумах; менше 70% — далеко від них.',
 
-  'Market cap': 'Share price times shares outstanding: what the market values the whole company at.',
-  'Revenue (TTM)': 'Total sales in the last reported fiscal year.',
-  EPS: 'Earnings per share: net income divided by shares outstanding.',
-  'P/E': 'Price-to-earnings: the price divided by EPS. Lower is cheaper; it is undefined when earnings are negative.',
-  'P/S': 'Price-to-sales: market cap divided by annual revenue. Useful when there are no earnings yet.',
-  ROE: 'Return on equity: net income divided by shareholders\' equity.',
-  'Gross margin': 'Revenue minus the cost of goods sold, as a percent of revenue.',
-  'Operating margin': 'Operating income as a percent of revenue: what is left after running the business, before interest and tax.',
-  'Current ratio': 'Current assets divided by current liabilities. Under 1 can mean short-term cash pressure.',
+  'Market cap': 'Ціна акції, помножена на кількість акцій: у скільки ринок оцінює всю компанію.',
+  'Revenue (TTM)': 'Загальна виручка за останній звітний фінансовий рік.',
+  EPS: 'Прибуток на акцію: чистий прибуток, поділений на кількість акцій.',
+  'P/E': 'Ціна до прибутку: ціна, поділена на EPS. Менше — дешевше; не визначається, коли прибуток від\'ємний.',
+  'P/S': 'Ціна до виручки: капіталізація, поділена на річну виручку. Корисно, коли прибутку ще немає.',
+  ROE: 'Рентабельність власного капіталу: чистий прибуток, поділений на власний капітал.',
+  'Gross margin': 'Виручка мінус собівартість, у відсотках від виручки.',
+  'Operating margin': 'Операційний прибуток у відсотках від виручки: що лишається після ведення бізнесу, до відсотків і податків.',
+  'Current ratio': 'Оборотні активи, поділені на поточні зобов\'язання. Менше 1 може означати брак грошей у короткій перспективі.',
 
   /* ----------------------------------------------------------- charts */
-  Price: 'Daily closing price with its 20-, 50- and 200-day moving averages.',
-  'RSI chart': 'RSI over time. The dashed lines mark 70 (overbought) and 30 (oversold).',
-  'MACD chart': 'MACD line, its signal line, and the histogram of the gap between them.',
-  'AO chart': 'Awesome Oscillator bars: green when higher than the bar before, red when lower.',
+  Price: 'Ціна закриття за день разом із 20-, 50- і 200-денними ковзними середніми.',
+  'RSI chart': 'RSI в часі. Пунктирні лінії — рівні 70 (перекупленість) і 30 (перепроданість).',
+  'MACD chart': 'Лінія MACD, її сигнальна лінія і гістограма різниці між ними.',
+  'AO chart': 'Стовпчики Awesome Oscillator: зелений — вищий за попередній, червоний — нижчий.',
 };
 
 /** The explanation for a label, or null when there is none. */

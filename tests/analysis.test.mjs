@@ -35,21 +35,21 @@ test('each side has a verdict and at most five points', () => {
 
 test('the risks of a thin, overbought fund are named', () => {
   const bear = buildOutlook(grx).bear.join(' ');
-  assert.match(bear, /Liquidity is thin at about 16K/);
-  assert.match(bear, /RSI at 77 is overbought/);
-  assert.match(bear, /As a fund/);
+  assert.match(bear, /Ліквідність низька — близько 16 тис\. акцій/);
+  assert.match(bear, /RSI 77 — перекупленість/);
+  assert.match(bear, /Це фонд/);
 });
 
 test('the strongest points come first', () => {
   const { bull } = buildOutlook(grx);
-  assert.match(bull[1], /stacked in bullish order/);
+  assert.match(bull[1], /бичачому порядку/);
 });
 
 test('missing numbers never print as NaN or undefined', () => {
   const empty = buildOutlook({ metrics: { price: 5 }, fundamentals: {}, score });
   const text = [...empty.bull, ...empty.bear].join(' ');
   assert.doesNotMatch(text, /NaN|undefined|null/);
-  assert.match(empty.bull[0], /nothing in the data argues for buying/);
+  assert.match(empty.bull[0], /немає аргументів на користь купівлі/);
 });
 
 test('every score item has a glossary entry', () => {
@@ -80,5 +80,5 @@ test('a thin side is topped up with levels to watch', () => {
   };
   const { bull } = buildOutlook(downtrend);
   assert.equal(bull.length, 5);
-  assert.match(bull.join(' '), /A close back above the 50-day average \(\$19\.56/);
+  assert.match(bull.join(' '), /Закриття знову вище 50-денної середньої \(\$19\.56/);
 });

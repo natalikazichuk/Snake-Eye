@@ -187,12 +187,12 @@ function renderIndicators(row) {
 function fundamentalsGap(row) {
   const kind = row.security?.kind;
   if (kind === 'fund') {
-    return 'This is a fund: it reports holdings and net asset value to the SEC, not revenue or earnings, so there are no company fundamentals to show. The Snake Score is weighted across the remaining components.';
+    return 'Це фонд: він звітує в SEC про активи та чисту вартість активів (NAV), а не про виручку чи прибуток, тож фундаментальних даних компанії немає. Snake Score рахується за рештою складових.';
   }
   if (kind === 'adr' || kind === 'foreign') {
-    return 'Foreign issuers report to the SEC on their home accounting rules, which this data source does not read, so fundamentals are usually missing. The Snake Score is weighted across the remaining components.';
+    return 'Іноземні компанії звітують у SEC за правилами обліку своєї країни або не в доларах, а такі звіти тут не читаються, тож фундаментальних даних зазвичай немає. Snake Score рахується за рештою складових.';
   }
-  return 'None loaded for this symbol. Interactive Brokers sends fundamentals only with a Refinitiv entitlement; run "npm run fundamentals -- --contact you@example.com" to fill them from SEC filings. Until then the Snake Score is weighted across the remaining components.';
+  return 'Для цього тікера фундаментальні дані не завантажені. Interactive Brokers надсилає їх лише з підпискою Refinitiv; щоб заповнити їх зі звітів SEC, запустіть "npm run fundamentals -- --contact ваша@пошта.com". До того Snake Score рахується за рештою складових.';
 }
 
 function renderFundamentals(row) {
@@ -224,9 +224,9 @@ function renderOutlook(row) {
   qs('#outlook-bull').textContent = bull.join(' ');
   qs('#outlook-bear').textContent = bear.join(' ');
   qs('#outlook-note').textContent =
-    'Written by fixed rules from the numbers on this page' +
-    (technicalOnly ? ', from price and volume only (no fundamentals are loaded for this symbol)' : '') +
-    '. It describes the current setup; it is not a forecast and not investment advice.';
+    'Текст складено за фіксованими правилами з показників на цій сторінці' +
+    (technicalOnly ? ', лише з ціни та обсягу (фундаментальних даних для цього тікера немає)' : '') +
+    '. Він описує поточну картину; це не прогноз і не інвестиційна порада.';
 }
 
 /** Shared hover readout: one crosshair index, every panel reports the same bar. */
