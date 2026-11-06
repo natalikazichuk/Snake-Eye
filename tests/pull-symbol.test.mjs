@@ -122,3 +122,16 @@ test('a corrupt data file is replaced rather than crashing the pull', async () =
     assert.equal(total, 1);
   });
 });
+
+test('re-pulling a symbol keeps the fundamentals SEC filled in', async () => {
+  await withTempFile(async (rel, abs) => {
+    const filled = { ...stock('GRX', '2026-01-02', '2026-11-04'), fundamentals: { revenue: 5e8, pe: 12 } };
+    await writeFile(abs, JSON.stringify({ meta: {}, stocks: [filled] }));
+
+    await mergeIntoFile(stock('GRX', '2026-01-02', '2026-11-05'), { file: rel });
+    const saved = JSON.parse(await readFile(abs, 'utf8')).stocks[0];
+
+    assert.equal(saved.history.dates.at(-1), '2026-11-05');
+    assert.deepEqual(saved.fundamentals, { revenue: 5e8, pe: 12 });
+  });
+});
