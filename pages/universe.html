@@ -97,16 +97,16 @@
         <table class="universe-table">
           <thead>
             <tr>
-              <th scope="col">Ticker</th>
-              <th scope="col" class="col-exchange">Exchange</th>
-              <th scope="col" class="num">Price</th>
-              <th scope="col" class="num">Change</th>
-              <th scope="col" class="num col-volume">Volume</th>
-              <th scope="col" class="num col-rvol">RVol</th>
-              <th scope="col" class="num col-rsi">RSI</th>
-              <th scope="col" class="num col-bars">Bars</th>
-              <th scope="col" class="col-fund" title="Fundamentals available for this symbol">Fund.</th>
-              <th scope="col" class="num">Score</th>
+              <th scope="col" data-sort="ticker"><button type="button" class="th-sort">Ticker</button></th>
+              <th scope="col" class="col-exchange" data-sort="exchange"><button type="button" class="th-sort">Exchange</button></th>
+              <th scope="col" class="num" data-sort="price"><button type="button" class="th-sort">Price</button></th>
+              <th scope="col" class="num" data-sort="change"><button type="button" class="th-sort">Change</button></th>
+              <th scope="col" class="num col-volume" data-sort="volume"><button type="button" class="th-sort">Volume</button></th>
+              <th scope="col" class="num col-rvol" data-sort="rvol"><button type="button" class="th-sort">RVol</button></th>
+              <th scope="col" class="num col-rsi" data-sort="rsi"><button type="button" class="th-sort">RSI</button></th>
+              <th scope="col" class="num col-bars" data-sort="bars"><button type="button" class="th-sort">Bars</button></th>
+              <th scope="col" class="col-fund" data-sort="fund" title="Fundamentals available for this symbol"><button type="button" class="th-sort">Fund.</button></th>
+              <th scope="col" class="num" data-sort="score"><button type="button" class="th-sort">Score</button></th>
             </tr>
           </thead>
           <tbody id="universe-body"></tbody>

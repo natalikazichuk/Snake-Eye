@@ -13,6 +13,7 @@
 
 import { loadUniverse } from './api.js';
 import { hasFundamentals } from './score.js';
+import { sortBy } from './sort.js';
 import {
   DASH,
   direction,
@@ -38,6 +39,62 @@ const UNIVERSE_CONFIG_URL = new URL('../config/universe.json', import.meta.url);
  */
 const API_STATUS_URL = new URL('../api/status', import.meta.url);
 const API_TICKER_URL = new URL('../api/ticker', import.meta.url);
+
+/**
+ * Sortable columns: click a header to sort by it, click again to flip. Text
+ * columns start A→Z, numbers start highest first — the useful end of each.
+ */
+const SORTS = {
+  ticker: { label: 'ticker', value: (row) => row.ticker, first: 'asc' },
+  exchange: { label: 'exchange', value: (row) => row.exchange, first: 'asc' },
+  price: { label: 'price', value: (row) => row.metrics.price },
+  change: { label: 'change', value: (row) => row.metrics.changePercent },
+  volume: { label: 'volume', value: (row) => row.metrics.volume },
+  rvol: { label: 'relative volume', value: (row) => row.metrics.relativeVolume },
+  rsi: { label: 'RSI', value: (row) => row.metrics.rsi14 },
+  bars: { label: 'bars', value: (row) => row.dates?.length ?? null },
+  fund: { label: 'fundamentals', value: (row) => (hasFundamentals(row.fundamentals) ? 1 : 0) },
+  score: { label: 'score', value: (row) => row.score.total },
+};
+
+const SORT_STORAGE_KEY = 'snake-eye:universe-sort';
+const DEFAULT_SORT = { key: 'score', dir: 'desc' };
+
+/** The last sort this browser used; any storage failure just means the default. */
+function loadSort() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(SORT_STORAGE_KEY));
+    if (saved && SORTS[saved.key] && (saved.dir === 'asc' || saved.dir === 'desc')) return saved;
+  } catch {
+    // private window, blocked storage, malformed value
+  }
+  return { ...DEFAULT_SORT };
+}
+
+function saveSort(sort) {
+  try {
+    window.localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify(sort));
+  } catch {
+    // not worth surfacing: the sort still works for this visit
+  }
+}
+
+function describeSort(sort, count) {
+  if (sort.key === 'score' && sort.dir === 'desc') return `${count} symbols, highest score first`;
+  const { label } = SORTS[sort.key];
+  const text = SORTS[sort.key].first === 'asc';
+  const order = sort.dir === 'asc' ? (text ? 'A → Z' : 'lowest first') : (text ? 'Z → A' : 'highest first');
+  return `${count} symbols, by ${label}, ${order}`;
+}
+
+function paintSortHeaders(sort) {
+  for (const th of document.querySelectorAll('.universe-table th[data-sort]')) {
+    const active = th.dataset.sort === sort.key;
+    th.classList.toggle('is-sorted', active);
+    th.classList.toggle('is-sorted--asc', active && sort.dir === 'asc');
+    th.setAttribute('aria-sort', active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+  }
+}
 
 function scorePill(row) {
   return el('span', {
@@ -235,14 +292,35 @@ async function init() {
   const panel = qs('#universe-panel');
   if (!panel) return;
 
+  let sort = loadSort();
+  let current = [];
+
+  const paintTable = () => {
+    const sorted = sortBy(current, SORTS[sort.key].value, sort.dir);
+    qs('#universe-body').replaceChildren(...renderRows(sorted));
+    qs('#universe-count').textContent = describeSort(sort, current.length);
+    paintSortHeaders(sort);
+  };
+
+  qs('.universe-table thead')?.addEventListener('click', (event) => {
+    const th = event.target.closest('th[data-sort]');
+    if (!th || !SORTS[th.dataset.sort]) return;
+    const key = th.dataset.sort;
+    sort = key === sort.key
+      ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' }
+      : { key, dir: SORTS[key].first || 'desc' };
+    saveSort(sort);
+    paintTable();
+  });
+
   async function render() {
     // Bypass the cache: the file changed on disk a moment ago.
     const { rows, meta } = await loadUniverse({ fresh: true });
+    current = rows;
 
     renderSourceInfo(meta, rows.length);
     renderSummary(rows, meta);
-    qs('#universe-body').replaceChildren(...renderRows(rows));
-    qs('#universe-count').textContent = `${rows.length} symbols, highest score first`;
+    paintTable();
     await renderMissing(rows);
   }
 

@@ -153,3 +153,27 @@
   .ticker-add input { width: 100%; }
   .ticker-add__field { flex: 1 1 100%; }
 }
+
+/* ---------------------------------------------------------------- sorting */
+
+.universe-table th[data-sort] { padding: 0; }
+.universe-table .th-sort {
+  width: 100%;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.universe-table th.num .th-sort { text-align: right; }
+.universe-table th.col-fund .th-sort { text-align: center; }
+.universe-table .th-sort:hover { color: var(--text); }
+.universe-table .th-sort:focus-visible { outline: 1px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.universe-table th.is-sorted .th-sort { color: var(--accent); }
+.universe-table th.is-sorted .th-sort::after { content: " ▾"; }
+.universe-table th.is-sorted--asc .th-sort::after { content: " ▴"; }
