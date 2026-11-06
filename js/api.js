@@ -14,6 +14,7 @@
 
 import { analyze } from './indicators.js';
 import { hasFundamentals, scoreStock } from './score.js';
+import { classifySecurity } from './security.js';
 
 /** Resolved against this module's URL, so pages/ and the root both work. */
 const STOCKS_URL = new URL('../data/stocks.json', import.meta.url);
@@ -75,6 +76,7 @@ function buildRow(stock, meta) {
     name: cleanName(stock.name, stock.ticker),
     exchange: (stock.exchange || 'UNKNOWN').toUpperCase(),
     sector: stock.sector,
+    security: classifySecurity(stock),
     currency: stock.currency || 'USD',
     fundamentals: stock.fundamentals || {},
     metrics,

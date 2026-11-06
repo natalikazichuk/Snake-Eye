@@ -359,6 +359,18 @@ export function carryFundamentals(fresh, previous) {
   return { ...previous, ...supplied };
 }
 
+/**
+ * A freshly pulled record, with what earlier runs wrote into the old one kept:
+ * fundamentals (see carryFundamentals) and the SEC profile, which only
+ * `npm run fundamentals` fills and an IBKR pull never brings.
+ */
+export function carryRecord(fresh, previous) {
+  if (!previous) return fresh;
+  const record = { ...fresh, fundamentals: carryFundamentals(fresh.fundamentals, previous.fundamentals) };
+  if (!record.profile && previous.profile) record.profile = previous.profile;
+  return record;
+}
+
 /** Wrap the records with the metadata the frontend reads. */
 export function buildPayload(stocks, { barSize = '1d' } = {}) {
   const sessions = stocks.flatMap((stock) => stock.history.dates);

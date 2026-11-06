@@ -99,7 +99,7 @@ npm run fundamentals -- --contact you@example.com
 | `npm run ticker -- PLUG` | one symbol on demand, with its score breakdown |
 | `npm run universe` | show the scan list; `--add` `--remove` `--from-portfolio` edit it |
 | `npm run universe -- --nyse --max-price 20` | replace the list with every NYSE stock under $20 |
-| `npm run fundamentals` | fill fundamentals from SEC filings |
+| `npm run fundamentals` | fill fundamentals, industry and security type (stock, ADR, fund) from SEC filings |
 | `npm run fields` | probe which snapshot field ids this gateway build answers |
 | `npm run demo-data` | regenerate the demo universe (same seed → same data) |
 

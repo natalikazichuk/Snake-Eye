@@ -139,14 +139,16 @@ export function createChart(canvas, spec) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 1;
-    for (const tick of niceTicks(min, max, current.ticks || 4)) {
+    const ticks = niceTicks(min, max, current.ticks || 4);
+    const tickStep = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : null;
+    for (const tick of ticks) {
       if (tick < min || tick > max) continue;
       const ty = Math.round(y(tick)) + 0.5;
       ctx.beginPath();
       ctx.moveTo(plotLeft, ty);
       ctx.lineTo(plotRight, ty);
       ctx.stroke();
-      ctx.fillText((current.formatValue || String)(tick), plotRight + 8, ty);
+      ctx.fillText((current.formatValue || String)(tick, tickStep), plotRight + 8, ty);
     }
 
     // Reference levels (zero line, RSI 30/70, …).
@@ -307,7 +309,9 @@ export function priceChart(canvas, row, options = {}) {
     height: options.height || 320,
     bars: options.bars || 180,
     dates: row.dates,
-    formatValue: (value) => `$${value.toFixed(value < 10 ? 2 : 0)}`,
+    // Decimals follow the tick spacing, not the price: a $10.10-$10.60 range
+    // labelled to whole dollars printed "$10" on every line.
+    formatValue: (value, step) => `$${value.toFixed(step === null ? 2 : step >= 1 ? 0 : step >= 0.01 ? 2 : 3)}`,
     series: [
       { label: 'SMA200', data: s.sma200, color: colors.sma200, width: 1.2 },
       { label: 'SMA50', data: s.sma50, color: colors.sma50, width: 1.2 },

@@ -44,7 +44,7 @@ import {
   daysSinceLastBar,
   buildPayload,
   buildStockRecord,
-  carryFundamentals,
+  carryRecord,
   countsAsFundamentals,
   normalizeHistory,
 } from './lib/ibkr-normalize.mjs';
@@ -311,12 +311,12 @@ async function main() {
   } catch {
     // first ingest, or an unreadable file: nothing to carry over
   }
-  const earlier = new Map((previous?.stocks || []).map((s) => [s.ticker, s.fundamentals]));
+  const earlier = new Map((previous?.stocks || []).map((s) => [s.ticker, s]));
   let carried = 0;
-  for (const stock of stocks) {
+  for (const [i, stock] of stocks.entries()) {
     const before = countsAsFundamentals(stock.fundamentals);
-    stock.fundamentals = carryFundamentals(stock.fundamentals, earlier.get(stock.ticker));
-    if (!before && countsAsFundamentals(stock.fundamentals)) carried += 1;
+    stocks[i] = carryRecord(stock, earlier.get(stock.ticker));
+    if (!before && countsAsFundamentals(stocks[i].fundamentals)) carried += 1;
   }
 
   const payload = buildPayload(stocks, { barSize: options.bar });

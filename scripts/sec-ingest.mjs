@@ -30,6 +30,7 @@ import https from 'node:https';
 import http from 'node:http';
 
 import { buildCikIndex, buildFundamentals, coverage } from './lib/sec-fundamentals.mjs';
+import { buildProfile } from './lib/sec-profile.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -56,6 +57,11 @@ const SEC_INDEX = options.base
 const SEC_FACTS = (cik) => (options.base
   ? `${options.base}/api/xbrl/companyfacts/CIK${cik}.json`
   : `https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`);
+const SEC_SUBMISSIONS = (cik) => (options.base
+  ? `${options.base}/submissions/CIK${cik}.json`
+  : `https://data.sec.gov/submissions/CIK${cik}.json`);
+
+const KIND_NOTE = { fund: 'fund', adr: 'ADR', foreign: 'foreign issuer' };
 
 if (!options.contact || !options.contact.includes('@')) {
   console.error('✗ SEC requires automated requests to identify themselves.\n');
@@ -137,6 +143,7 @@ async function main() {
   console.log(`   ${index.size.toLocaleString('en-US')} tickers known to EDGAR\n`);
 
   let filled = 0;
+  let profiled = 0;
   const missing = [];
 
   for (const [position, stock] of stocks.entries()) {
@@ -149,11 +156,26 @@ async function main() {
       continue;
     }
 
+    // Industry, country and what kind of filer this is. A fund has no company
+    // financials at all, so this is often the only thing SEC can say about it.
+    let kindNote = '';
+    try {
+      await sleep(options.delay);
+      const profile = buildProfile(await get(SEC_SUBMISSIONS(cik)));
+      if (profile) {
+        stock.profile = profile;
+        profiled += 1;
+        kindNote = KIND_NOTE[profile.kind] ? ` (${KIND_NOTE[profile.kind]})` : '';
+      }
+    } catch (error) {
+      console.log(`${label} — profile failed: ${error.message}`);
+    }
+
     try {
       await sleep(options.delay);
       const facts = await get(SEC_FACTS(cik));
       if (!facts) {
-        missing.push([stock.ticker, 'no XBRL facts filed']);
+        missing.push([stock.ticker, `no XBRL facts filed${kindNote}`]);
         console.log(`${label} — no filings`);
         continue;
       }
@@ -163,7 +185,7 @@ async function main() {
       const found = coverage(fundamentals);
 
       if (found.filled === 0) {
-        missing.push([stock.ticker, 'filings carry none of the fields we read']);
+        missing.push([stock.ticker, `filings carry none of the fields we read${kindNote}`]);
         console.log(`${label} — nothing usable`);
         continue;
       }
@@ -188,8 +210,8 @@ async function main() {
     }
   }
 
-  if (!filled) {
-    throw new Error('No fundamentals were found — nothing written.');
+  if (!filled && !profiled) {
+    throw new Error('No fundamentals or profiles were found — nothing written.');
   }
 
   payload.meta = {
@@ -200,6 +222,7 @@ async function main() {
   await writeFile(filePath, `${JSON.stringify(payload)}\n`);
 
   console.log(`\n✓ fundamentals added for ${filled}/${stocks.length} symbols → ${options.file}`);
+  console.log(`  industry and security type for ${profiled}/${stocks.length}`);
   if (missing.length) {
     console.log(`\n   without fundamentals (${missing.length}):`);
     for (const [ticker, reason] of missing) console.log(`     ${ticker.padEnd(6)} ${reason}`);
