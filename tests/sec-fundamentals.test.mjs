@@ -10,7 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildCikIndex, buildFundamentals, coverage } from '../scripts/lib/sec-fundamentals.mjs';
+import { buildCikIndex, buildFundamentals, coverage, reportingCurrencies } from '../scripts/lib/sec-fundamentals.mjs';
 
 const usd = (rows) => ({ units: { USD: rows } });
 const perShare = (rows) => ({ units: { 'USD/shares': rows } });
@@ -151,4 +151,47 @@ test('coverage counts what actually arrived', () => {
 test('the CIK index pads to the ten digits the endpoint expects', () => {
   const index = buildCikIndex({ 0: { cik_str: 320193, ticker: 'AAPL', title: 'Apple Inc.' } });
   assert.equal(index.get('AAPL'), '0000320193');
+});
+
+const year = (y, val, extra = {}) => ({ start: `${y}-01-01`, end: `${y}-12-31`, val, form: '10-K', filed: `${y + 1}-02-10`, ...extra });
+
+test('the tag with the newest year wins over an older, higher-priority one', () => {
+  // NVIDIA: RevenueFromContractWithCustomer... stops at FY2022, Revenues runs to today.
+  const nvda = { cik: 1045810, entityName: 'NVIDIA CORP', facts: { 'us-gaap': {
+    RevenueFromContractWithCustomerExcludingAssessedTax: usd([year(2020, 16.7e9), year(2021, 26.9e9)]),
+    Revenues: usd([year(2020, 16.7e9), year(2021, 26.9e9), year(2024, 130.5e9), year(2025, 190e9)]),
+  } } };
+  const f = buildFundamentals(nvda, { price: 100 });
+  assert.equal(f.revenue, 190e9);
+  assert.equal(f.source.revenueTag, 'Revenues');
+  assert.equal(f.source.fiscalYearEnd, '2025-12-31');
+});
+
+test('figures in another currency are never read as dollars', () => {
+  // NIO: CNY figures with a USD convenience translation beside them.
+  const nio = { cik: 1736541, entityName: 'NIO Inc.', facts: { 'us-gaap': {
+    RevenueFromContractWithCustomerExcludingAssessedTax: { units: {
+      CNY: [year(2025, 87.5e9, { form: '20-F' })],
+      USD: [year(2025, 12.1e9, { form: '20-F' })],
+    } },
+    EarningsPerShareDiluted: { units: {
+      'CNY/shares': [year(2025, -10.2, { form: '20-F' })],
+      'USD/shares': [year(2025, -1.41, { form: '20-F' })],
+    } },
+  } } };
+  const f = buildFundamentals(nio, { price: 5 });
+  assert.equal(f.revenue, 12.1e9);
+  assert.equal(f.eps, -1.41);
+});
+
+test('a filer reporting only in BRL gets nulls, and its 2010 US-GAAP figures are stale', () => {
+  // Bradesco: US-GAAP in 2010, IFRS in BRL since.
+  const bbd = { cik: 1160330, entityName: 'BANK BRADESCO', facts: {
+    'us-gaap': { NetIncomeLoss: usd([year(2010, 5e9, { form: '20-F' })]) },
+    'ifrs-full': { ProfitLoss: { units: { BRL: [year(2025, 20e9, { form: '20-F' })] } } },
+  } };
+  const f = buildFundamentals(bbd, { price: 3 });
+  assert.equal(f.roe, null);
+  assert.equal(coverage(f).filled, 0);
+  assert.deepEqual(reportingCurrencies(bbd), ['BRL']);
 });
