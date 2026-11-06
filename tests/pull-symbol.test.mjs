@@ -135,3 +135,16 @@ test('re-pulling a symbol keeps the fundamentals SEC filled in', async () => {
     assert.deepEqual(saved.fundamentals, { revenue: 5e8, pe: 12 });
   });
 });
+
+test('re-pulling a fund keeps its SEC profile even with no fundamentals', async () => {
+  await withTempFile(async (rel, abs) => {
+    const profile = { kind: 'fund', industry: 'Closed-end fund', sic: null, country: null, source: 'SEC EDGAR' };
+    await writeFile(abs, JSON.stringify({ meta: {}, stocks: [{ ...stock('GRX', '2026-01-02', '2026-11-04'), profile }] }));
+
+    await mergeIntoFile(stock('GRX', '2026-01-02', '2026-11-05'), { file: rel });
+    const saved = JSON.parse(await readFile(abs, 'utf8')).stocks[0];
+
+    assert.deepEqual(saved.profile, profile);
+    assert.deepEqual(saved.fundamentals, {});
+  });
+});

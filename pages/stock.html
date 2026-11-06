@@ -56,9 +56,11 @@
         <div class="stock-hero__line">
           <h1 class="stock-hero__ticker" id="stock-ticker">—</h1>
           <span class="tag" id="stock-exchange"></span>
-          <span class="tag" id="stock-sector"></span>
+          <span class="tag tag--kind" id="stock-kind" hidden></span>
+          <span class="tag" id="stock-country" hidden></span>
         </div>
         <p class="stock-hero__name" id="stock-name"></p>
+        <p class="stock-hero__industry" id="stock-industry" hidden></p>
       </div>
 
       <div class="stock-hero__quote">
@@ -74,7 +76,7 @@
 
     <section class="panel score-panel" aria-labelledby="score-heading">
       <div class="score-panel__main">
-        <h2 class="panel__title" id="score-heading">🐍 Snake Score</h2>
+        <h2 class="panel__title" id="score-heading"><span data-glossary="Snake Score">🐍 Snake Score</span></h2>
         <p class="score-panel__value"><span id="score-value">—</span><small>/ 100</small></p>
         <p class="score-panel__label" id="score-label"></p>
         <div class="score-bar">
@@ -86,6 +88,21 @@
         </p>
       </div>
       <div class="score-components" id="score-components"></div>
+    </section>
+
+    <section class="panel outlook" aria-labelledby="outlook-heading">
+      <div class="panel__head"><h2 class="panel__title" id="outlook-heading">Analysis</h2></div>
+      <div class="outlook__grid">
+        <article class="outlook__side outlook__side--bull">
+          <h3 class="outlook__title">▲ Case for buying</h3>
+          <p class="outlook__text" id="outlook-bull"></p>
+        </article>
+        <article class="outlook__side outlook__side--bear">
+          <h3 class="outlook__title">▼ Case for selling</h3>
+          <p class="outlook__text" id="outlook-bear"></p>
+        </article>
+      </div>
+      <p class="outlook__note" id="outlook-note"></p>
     </section>
 
     <section class="panel chart-stack" aria-labelledby="charts-heading">
@@ -103,7 +120,7 @@
 
       <figure class="chart">
         <figcaption class="chart__title">
-          Price
+          <span data-glossary="Price">Price</span>
           <span class="chart__legend">
             <i class="dot dot--price"></i>Close
             <i class="dot dot--sma20"></i>SMA20
@@ -115,22 +132,22 @@
       </figure>
 
       <figure class="chart">
-        <figcaption class="chart__title">Volume</figcaption>
+        <figcaption class="chart__title"><span data-glossary="Volume vs 50-day average">Volume</span></figcaption>
         <canvas id="chart-volume" role="img" aria-label="Daily volume"></canvas>
       </figure>
 
       <figure class="chart">
-        <figcaption class="chart__title">RSI (14)</figcaption>
+        <figcaption class="chart__title"><span data-glossary="RSI chart">RSI (14)</span></figcaption>
         <canvas id="chart-rsi" role="img" aria-label="Relative Strength Index with 30 and 70 levels"></canvas>
       </figure>
 
       <figure class="chart">
-        <figcaption class="chart__title">MACD (12, 26, 9)</figcaption>
+        <figcaption class="chart__title"><span data-glossary="MACD chart">MACD (12, 26, 9)</span></figcaption>
         <canvas id="chart-macd" role="img" aria-label="MACD line, signal line and histogram"></canvas>
       </figure>
 
       <figure class="chart">
-        <figcaption class="chart__title">Awesome Oscillator</figcaption>
+        <figcaption class="chart__title"><span data-glossary="AO chart">Awesome Oscillator</span></figcaption>
         <canvas id="chart-ao" role="img" aria-label="Awesome Oscillator histogram"></canvas>
       </figure>
     </section>

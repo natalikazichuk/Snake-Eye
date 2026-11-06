@@ -13,7 +13,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MIN_BARS, buildStockRecord, carryFundamentals, normalizeHistory } from './ibkr-normalize.mjs';
+import { MIN_BARS, buildStockRecord, carryRecord, normalizeHistory } from './ibkr-normalize.mjs';
 import {
   checkAuth,
   fetchFundamentals,
@@ -121,7 +121,7 @@ export async function mergeIntoFile(record, { file = 'data/stocks.local.json', b
   const index = payload.stocks.findIndex((s) => s.ticker === record.ticker);
   const replaced = index !== -1;
   if (replaced) {
-    record = { ...record, fundamentals: carryFundamentals(record.fundamentals, payload.stocks[index].fundamentals) };
+    record = carryRecord(record, payload.stocks[index]);
     payload.stocks[index] = record;
   }
   else payload.stocks.push(record);

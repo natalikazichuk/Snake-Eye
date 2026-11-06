@@ -24,6 +24,8 @@ import {
   renderError,
   renderSourceInfo,
 } from './app.js';
+import { buildOutlook } from './analysis.js';
+import { initTooltips, withTip } from './tooltip.js';
 import { has as inWatchlist, subscribe as onWatchlistChange, toggle as toggleWatchlist } from './watchlist.js';
 
 const COMPONENT_LABELS = {
@@ -38,14 +40,14 @@ let currentBars = 180;
 
 function metricCard(label, value, tone = '') {
   return el('div', { className: 'metric' }, [
-    el('span', { className: 'metric__label', text: label }),
+    withTip(el('span', { className: 'metric__label', text: label }), label),
     el('span', { className: `metric__value ${tone}`.trim(), text: value }),
   ]);
 }
 
 function statRow(label, value, tone = '') {
   return el('div', { className: 'stat-row' }, [
-    el('span', { className: 'stat-row__label', text: label }),
+    withTip(el('span', { className: 'stat-row__label', text: label }), label),
     el('span', { className: `stat-row__value ${tone}`.trim(), text: value }),
   ]);
 }
@@ -57,7 +59,28 @@ function renderHeader(row) {
   qs('#stock-ticker').textContent = row.ticker;
   qs('#stock-name').textContent = row.name;
   qs('#stock-exchange').textContent = row.exchange;
-  qs('#stock-sector').textContent = row.sector;
+
+  const security = row.security || {};
+  const kind = qs('#stock-kind');
+  kind.hidden = !security.label;
+  if (security.label) {
+    kind.textContent = security.label;
+    kind.className = `tag tag--kind tag--${security.kind}`;
+    withTip(kind, null, security.tip);
+  }
+
+  const country = qs('#stock-country');
+  country.hidden = !security.country;
+  country.textContent = security.country || '';
+
+  // Sector comes with the demo data, industry from SEC; show whichever exist.
+  const industry = qs('#stock-industry');
+  const parts = [security.sector, security.industry].filter(Boolean);
+  industry.hidden = !parts.length;
+  industry.replaceChildren(
+    el('span', { className: 'stock-hero__industry-label', text: 'Industry' }),
+    ...parts.map((part) => el('span', { text: part })),
+  );
   qs('#stock-price').textContent = formatPrice(m.price);
 
   const change = qs('#stock-change');
@@ -86,7 +109,7 @@ function renderScore(row) {
     ...Object.entries(score.components).map(([key, component]) =>
       el('div', { className: 'score-component' }, [
         el('div', { className: 'score-component__head' }, [
-          el('span', { className: 'score-component__name', text: COMPONENT_LABELS[key] }),
+          withTip(el('span', { className: 'score-component__name', text: COMPONENT_LABELS[key] }), COMPONENT_LABELS[key]),
           el('span', { className: 'score-component__value', text: `${component.score}` }),
         ]),
         el('div', { className: 'score-bar score-bar--slim' }, [
@@ -97,7 +120,7 @@ function renderScore(row) {
           { className: 'score-component__items' },
           component.items.map((item) =>
             el('li', { className: item.points > 0 ? 'is-hit' : 'is-miss' }, [
-              el('span', { className: 'score-item__label', text: item.label }),
+              withTip(el('span', { className: 'score-item__label', text: item.label }), item.label),
               el('span', {
                 className: 'score-item__points',
                 text: `${item.points.toFixed(item.points % 1 === 0 ? 0 : 1)} / ${item.max}`,
@@ -161,17 +184,22 @@ function renderIndicators(row) {
   );
 }
 
+function fundamentalsGap(row) {
+  const kind = row.security?.kind;
+  if (kind === 'fund') {
+    return 'This is a fund: it reports holdings and net asset value to the SEC, not revenue or earnings, so there are no company fundamentals to show. The Snake Score is weighted across the remaining components.';
+  }
+  if (kind === 'adr' || kind === 'foreign') {
+    return 'Foreign issuers report to the SEC on their home accounting rules, which this data source does not read, so fundamentals are usually missing. The Snake Score is weighted across the remaining components.';
+  }
+  return 'None loaded for this symbol. Interactive Brokers sends fundamentals only with a Refinitiv entitlement; run "npm run fundamentals -- --contact you@example.com" to fill them from SEC filings. Until then the Snake Score is weighted across the remaining components.';
+}
+
 function renderFundamentals(row) {
   const f = row.fundamentals;
 
   if (!row.score.fundamentalsAvailable) {
-    qs('#fundamentals').replaceChildren(
-      el('p', {
-        className: 'stat-list__empty',
-        text:
-          'Not supplied by this data source. Interactive Brokers serves fundamentals only with a Refinitiv entitlement; the Snake Score is weighted across the remaining components.',
-      }),
-    );
+    qs('#fundamentals').replaceChildren(el('p', { className: 'stat-list__empty', text: fundamentalsGap(row) }));
     return;
   }
 
@@ -189,6 +217,16 @@ function renderFundamentals(row) {
     statRow('Operating margin', formatRatioPercent(f.operatingMargin)),
     statRow('Current ratio', formatNumber(f.currentRatio, 2)),
   );
+}
+
+function renderOutlook(row) {
+  const { bull, bear, technicalOnly } = buildOutlook(row);
+  qs('#outlook-bull').textContent = bull.join(' ');
+  qs('#outlook-bear').textContent = bear.join(' ');
+  qs('#outlook-note').textContent =
+    'Written by fixed rules from the numbers on this page' +
+    (technicalOnly ? ', from price and volume only (no fundamentals are loaded for this symbol)' : '') +
+    '. It describes the current setup; it is not a forecast and not investment advice.';
 }
 
 /** Shared hover readout: one crosshair index, every panel reports the same bar. */
@@ -286,11 +324,16 @@ async function initStockPage() {
     renderScore(row);
     renderIndicators(row);
     renderFundamentals(row);
+    renderOutlook(row);
     renderCharts(row);
+    qsa('[data-glossary]').forEach((node) => withTip(node, node.dataset.glossary));
     initWatchButton(row);
   } catch (error) {
     renderError(page, error);
   }
 }
 
-document.addEventListener('DOMContentLoaded', initStockPage);
+document.addEventListener('DOMContentLoaded', () => {
+  initTooltips();
+  initStockPage();
+});
