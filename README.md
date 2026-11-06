@@ -229,6 +229,7 @@ snake-eye/
 ├── tests/                      indicators · filters · ibkr-normalize · sec-fundamentals
 └── docs/
     ├── DAILY.md                which windows to open, and what each error means
+    ├── DAILY.uk.md             the same routine in Ukrainian, for PowerShell
     ├── IBKR.md                 gateway setup, pacing, field ids, entitlements
     ├── PROJECT.md              architecture and data flow
     ├── API.md                  data contract and the road to a backend
@@ -259,7 +260,8 @@ carries whatever delay and gaps the source has.
 (`data/stocks.local.json`), який **не потрапляє в git**: це дані особистої
 підписки, їх не можна поширювати. Тому код публічний, а дані — ні.
 
-Як запускати — [docs/DAILY.md](docs/DAILY.md), налаштування гейтвея —
+Як запускати щодня — [docs/DAILY.uk.md](docs/DAILY.uk.md) (українською, PowerShell),
+повна версія з таблицею помилок — [docs/DAILY.md](docs/DAILY.md), налаштування гейтвея —
 [docs/IBKR.md](docs/IBKR.md).
 
 `Snake Score` — оцінка відповідності заданим критеріям, а не прогноз ціни і не

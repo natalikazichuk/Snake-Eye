@@ -1,5 +1,7 @@
 # Running Snake Eye day to day
 
+Українською, для PowerShell: [DAILY.uk.md](DAILY.uk.md).
+
 Two routines. Which one you need depends on whether the data on disk is fresh
 enough — the site reads `data/stocks.local.json`, and that file changes only
 when you refresh it.
