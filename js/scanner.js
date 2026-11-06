@@ -8,6 +8,7 @@
  * changes here.
  */
 
+import { sortBy } from './sort.js';
 import { loadUniverse, loadPresets } from './api.js';
 import {
   FILTER_FIELDS,
@@ -195,20 +196,7 @@ function renderRow(row) {
 
 function sortRows(rows) {
   const column = COLUMNS.find((col) => col.key === state.sortKey) || COLUMNS.at(-2);
-  const factor = state.sortDir === 'asc' ? 1 : -1;
-
-  return [...rows].sort((a, b) => {
-    const left = column.sort(a);
-    const right = column.sort(b);
-    const leftMissing = left === null || left === undefined || Number.isNaN(left);
-    const rightMissing = right === null || right === undefined || Number.isNaN(right);
-    // Rows with no value for the sorted metric always sink to the bottom.
-    if (leftMissing && rightMissing) return 0;
-    if (leftMissing) return 1;
-    if (rightMissing) return -1;
-    if (typeof left === 'string') return left.localeCompare(right) * factor;
-    return (left - right) * factor;
-  });
+  return sortBy(rows, column.sort, state.sortDir);
 }
 
 function visibleRows() {
