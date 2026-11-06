@@ -343,6 +343,22 @@ export function buildStockRecord({ contract, history, fundamentals, sector = nul
   };
 }
 
+/**
+ * Keep fundamentals an earlier run wrote when this pull brought none.
+ *
+ * Without the Refinitiv entitlement IBKR returns an empty block, and writing
+ * that over the file erased what `npm run fundamentals` filled from SEC the day
+ * before. Anything IBKR did supply still wins, field by field.
+ */
+export function carryFundamentals(fresh, previous) {
+  const next = fresh || {};
+  if (!countsAsFundamentals(previous)) return next;
+  const supplied = Object.fromEntries(
+    Object.entries(next).filter(([, value]) => value !== null && value !== undefined && value !== ''),
+  );
+  return { ...previous, ...supplied };
+}
+
 /** Wrap the records with the metadata the frontend reads. */
 export function buildPayload(stocks, { barSize = '1d' } = {}) {
   const sessions = stocks.flatMap((stock) => stock.history.dates);

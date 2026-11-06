@@ -44,6 +44,7 @@ import {
   daysSinceLastBar,
   buildPayload,
   buildStockRecord,
+  carryFundamentals,
   countsAsFundamentals,
   normalizeHistory,
 } from './lib/ibkr-normalize.mjs';
@@ -300,8 +301,29 @@ async function main() {
     throw new Error('No symbols were ingested — nothing written. See the errors above.');
   }
 
-  const payload = buildPayload(stocks, { barSize: options.bar });
   const outPath = resolve(ROOT, options.out);
+
+  // A fresh pull without the Refinitiv entitlement has no fundamentals; keep the
+  // ones `npm run fundamentals` wrote into this file instead of erasing them.
+  let previous = null;
+  try {
+    previous = JSON.parse(await readFile(outPath, 'utf8'));
+  } catch {
+    // first ingest, or an unreadable file: nothing to carry over
+  }
+  const earlier = new Map((previous?.stocks || []).map((s) => [s.ticker, s.fundamentals]));
+  let carried = 0;
+  for (const stock of stocks) {
+    const before = countsAsFundamentals(stock.fundamentals);
+    stock.fundamentals = carryFundamentals(stock.fundamentals, earlier.get(stock.ticker));
+    if (!before && countsAsFundamentals(stock.fundamentals)) carried += 1;
+  }
+
+  const payload = buildPayload(stocks, { barSize: options.bar });
+  if (carried && previous?.meta?.fundamentalsProvider) {
+    payload.meta.fundamentalsProvider = previous.meta.fundamentalsProvider;
+    payload.meta.fundamentalsUpdated = previous.meta.fundamentalsUpdated;
+  }
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, `${JSON.stringify(payload)}\n`);
 
@@ -323,6 +345,7 @@ async function main() {
   console.log(`\n✓ ${stocks.length} symbols written to ${options.out}`);
   console.log(`   sessions      : ${payload.meta.firstSession} → ${payload.meta.lastSession}`);
   console.log(`   fundamentals  : ${withFundamentals}/${stocks.length} symbols (${withRatios} with revenue and margins)`);
+  if (carried) console.log(`   kept from the last SEC fill: ${carried} symbols`);
   if (options.fundamentals && withFundamentals === 0) {
     if (!feedReport.snapshotFundamentals && !feedReport.refinitivAnswered) {
       console.log('');

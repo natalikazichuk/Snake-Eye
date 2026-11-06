@@ -303,6 +303,14 @@ test('the " - EXCHANGE" header form still works', () => {
   assert.equal(picked.name, 'APPLE INC');
 });
 
+test('carryFundamentals keeps earlier figures and lets fresh ones win', async () => {
+  const { carryFundamentals } = await import('../scripts/lib/ibkr-normalize.mjs');
+  assert.deepEqual(carryFundamentals({}, { revenue: 1, pe: 2 }), { revenue: 1, pe: 2 });
+  assert.deepEqual(carryFundamentals({ pe: 9, eps: null }, { revenue: 1, pe: 2 }), { revenue: 1, pe: 9 });
+  assert.deepEqual(carryFundamentals({ pe: 9 }, { industry: 'Funds' }), { pe: 9 });
+  assert.deepEqual(carryFundamentals(undefined, undefined), {});
+});
+
 /* ------------------------------------------------------------- freshness */
 
 test('counts calendar days from the last bar to today', () => {
