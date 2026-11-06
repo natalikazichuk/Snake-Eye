@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import http from 'node:http';
 
-import { buildCikIndex, buildFundamentals, coverage } from './lib/sec-fundamentals.mjs';
+import { buildCikIndex, buildFundamentals, coverage, reportingCurrencies } from './lib/sec-fundamentals.mjs';
 import { buildProfile } from './lib/sec-profile.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -185,7 +185,10 @@ async function main() {
       const found = coverage(fundamentals);
 
       if (found.filled === 0) {
-        missing.push([stock.ticker, `filings carry none of the fields we read${kindNote}`]);
+        const currencies = reportingCurrencies(facts);
+        missing.push([stock.ticker, currencies.length
+          ? `reports in ${currencies.join('/')}, not USD — left empty rather than mixed with dollar prices${kindNote}`
+          : `filings carry none of the fields we read${kindNote}`]);
         console.log(`${label} — nothing usable`);
         continue;
       }

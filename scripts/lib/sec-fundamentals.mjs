@@ -24,22 +24,45 @@ const TAGS = {
     'RevenueFromContractWithCustomerExcludingAssessedTax',
     'RevenueFromContractWithCustomerIncludingAssessedTax',
     'Revenues',
+    'Revenue', // ifrs-full
     'SalesRevenueNet',
     'SalesRevenueGoodsNet',
   ],
   netIncome: ['NetIncomeLoss', 'ProfitLoss', 'NetIncomeLossAvailableToCommonStockholdersBasic'],
-  eps: ['EarningsPerShareDiluted', 'EarningsPerShareBasicAndDiluted', 'EarningsPerShareBasic'],
+  eps: [
+    'EarningsPerShareDiluted',
+    'EarningsPerShareBasicAndDiluted',
+    'EarningsPerShareBasic',
+    'DilutedEarningsLossPerShare', // ifrs-full
+    'BasicEarningsLossPerShare',
+  ],
   equity: [
     'StockholdersEquity',
     'StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest',
+    'EquityAttributableToOwnersOfParent', // ifrs-full
+    'Equity',
   ],
   liabilities: ['Liabilities'],
-  assetsCurrent: ['AssetsCurrent'],
-  liabilitiesCurrent: ['LiabilitiesCurrent'],
+  assetsCurrent: ['AssetsCurrent', 'CurrentAssets'],
+  liabilitiesCurrent: ['LiabilitiesCurrent', 'CurrentLiabilities'],
   grossProfit: ['GrossProfit'],
-  operatingIncome: ['OperatingIncomeLoss'],
+  operatingIncome: ['OperatingIncomeLoss', 'ProfitLossFromOperatingActivities'],
   shares: ['EntityCommonStockSharesOutstanding', 'CommonStockSharesOutstanding'],
 };
+
+/**
+ * The unit each metric must be in. Prices come from IBKR in dollars, so a
+ * figure in any other currency would make P/E, P/S and market cap silently
+ * wrong: NIO files revenue in CNY, and CNY 87.5B printed as "$87.5B" with a
+ * P/E built from a dollar price over a yuan EPS. Many 20-F filers add a USD
+ * convenience translation, which is read; a filer reporting only in BRL or EUR
+ * gets nulls instead of numbers in the wrong currency.
+ */
+const UNIT = { eps: 'USD/shares', shares: 'shares' };
+const unitFor = (metric) => UNIT[metric] || 'USD';
+
+/** A series whose latest year is this much older than the filer's newest one is stale. */
+const STALE_YEARS = 3;
 
 /** Annual filings only: a 10-K, or the 20-F/40-F a foreign issuer files instead. */
 const ANNUAL_FORMS = new Set(['10-K', '10-K/A', '20-F', '20-F/A', '40-F', '40-F/A']);
@@ -50,18 +73,28 @@ const ANNUAL_FORMS = new Set(['10-K', '10-K/A', '20-F', '20-F/A', '40-F', '40-F/
  * `facts` holds `us-gaap` for domestic filers and `ifrs-full` for many foreign
  * ones; `dei` carries entity-level figures such as the share count.
  */
-function factsFor(companyfacts, tag) {
+function factsFor(companyfacts, tag, unit = null) {
   const namespaces = companyfacts?.facts || {};
-  for (const namespace of ['us-gaap', 'ifrs-full', 'dei']) {
+  return ['us-gaap', 'ifrs-full', 'dei'].flatMap((namespace) => {
     const entry = namespaces[namespace]?.[tag];
-    if (!entry?.units) continue;
+    if (!entry?.units) return [];
+    return Object.entries(entry.units)
+      .filter(([name]) => unit === null || name === unit)
+      .flatMap(([name, values]) => values.map((value) => ({ ...value, unit: name })));
+  });
+}
 
-    const rows = Object.entries(entry.units).flatMap(([unit, values]) =>
-      values.map((value) => ({ ...value, unit })),
-    );
-    if (rows.length) return rows;
+/** Currencies the filer reports in, other than dollars — to explain a gap. */
+export function reportingCurrencies(companyfacts) {
+  const found = new Set();
+  for (const namespace of Object.values(companyfacts?.facts || {})) {
+    for (const entry of Object.values(namespace || {})) {
+      for (const unit of Object.keys(entry?.units || {})) {
+        if (/^[A-Z]{3}$/.test(unit) && unit !== 'USD') found.add(unit);
+      }
+    }
   }
-  return [];
+  return [...found].sort();
 }
 
 /**
@@ -72,8 +105,9 @@ function factsFor(companyfacts, tag) {
  * (equity, share counts) have no start date and are taken as they come.
  */
 function annualSeries(companyfacts, metric) {
+  let best = null;
   for (const tag of TAGS[metric]) {
-    const rows = factsFor(companyfacts, tag)
+    const rows = factsFor(companyfacts, tag, unitFor(metric))
       .filter((row) => ANNUAL_FORMS.has(row.form) && isNum(row.val) && row.end)
       .filter((row) => {
         if (!row.start) return true; // instant fact
@@ -91,12 +125,36 @@ function annualSeries(companyfacts, metric) {
       if (!existing || (row.filed || '') > (existing.filed || '')) byPeriod.set(row.end, row);
     }
 
+    // Filers switch tags over the years: NVIDIA reported revenue under
+    // RevenueFromContractWithCustomer... until FY2022 and under Revenues
+    // since. The first tag with any data is not the answer; the one with the
+    // newest year is. Priority order only breaks a tie.
     const ordered = [...byPeriod.values()].sort((a, b) => (a.end < b.end ? 1 : -1));
-    if (ordered.length) {
-      return { tag, latest: ordered[0], previous: ordered[1] || null, all: ordered };
+    if (ordered.length && (!best || ordered[0].end > best.latest.end)) {
+      best = { tag, latest: ordered[0], previous: ordered[1] || null, all: ordered };
     }
   }
-  return null;
+  return best;
+}
+
+/** The newest period end the filer has reported anything for. */
+function newestEnd(companyfacts) {
+  let newest = '';
+  for (const namespace of Object.values(companyfacts?.facts || {})) {
+    for (const entry of Object.values(namespace || {})) {
+      for (const rows of Object.values(entry?.units || {})) {
+        for (const row of rows) if (row.end && row.end > newest) newest = row.end;
+      }
+    }
+  }
+  return newest || null;
+}
+
+/** Drop a series whose latest year trails the filer's newest report by years. */
+function fresh(series, newest) {
+  if (!series || !newest) return series;
+  const years = (new Date(newest) - new Date(series.latest.end)) / (365.25 * 86400000);
+  return years > STALE_YEARS ? null : series;
 }
 
 const valueOf = (series) => (series?.latest ? series.latest.val : null);
@@ -120,20 +178,25 @@ const ratio = (numerator, denominator) =>
  * guessed.
  */
 export function buildFundamentals(companyfacts, { price = null } = {}) {
-  const revenue = annualSeries(companyfacts, 'revenue');
-  const netIncome = annualSeries(companyfacts, 'netIncome');
-  const eps = annualSeries(companyfacts, 'eps');
-  const equity = annualSeries(companyfacts, 'equity');
-  const liabilities = annualSeries(companyfacts, 'liabilities');
-  const assetsCurrent = annualSeries(companyfacts, 'assetsCurrent');
-  const liabilitiesCurrent = annualSeries(companyfacts, 'liabilitiesCurrent');
-  const grossProfit = annualSeries(companyfacts, 'grossProfit');
-  const operatingIncome = annualSeries(companyfacts, 'operatingIncome');
+  // Bradesco's last US-GAAP figures are from 2010; it has filed IFRS in BRL
+  // ever since. Without this, 2010 numbers scored as current.
+  const newest = newestEnd(companyfacts);
+  const series = (metric) => fresh(annualSeries(companyfacts, metric), newest);
+
+  const revenue = series('revenue');
+  const netIncome = series('netIncome');
+  const eps = series('eps');
+  const equity = series('equity');
+  const liabilities = series('liabilities');
+  const assetsCurrent = series('assetsCurrent');
+  const liabilitiesCurrent = series('liabilitiesCurrent');
+  const grossProfit = series('grossProfit');
+  const operatingIncome = series('operatingIncome');
 
   // The share count is an entity fact filed with the cover page, so it is the
   // freshest number available and is not restricted to annual forms.
   const sharesRows = TAGS.shares
-    .flatMap((tag) => factsFor(companyfacts, tag))
+    .flatMap((tag) => factsFor(companyfacts, tag, unitFor('shares')))
     .filter((row) => isNum(row.val))
     .sort((a, b) => ((a.end || '') < (b.end || '') ? 1 : -1));
   const shares = sharesRows[0]?.val ?? null;
